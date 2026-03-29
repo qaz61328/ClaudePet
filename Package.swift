@@ -12,6 +12,7 @@ let package = Package(
                 .copy("Resources/default"),
                 .copy("Resources/statusbar_icon.png"),
                 .copy("Resources/statusbar_icon@2x.png"),
+                .copy("Resources/jf-openhuninn-2.1.ttf"),
             ]
         )
     ]

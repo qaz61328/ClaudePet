@@ -1,4 +1,5 @@
 import AppKit
+import CoreText
 
 // MARK: - App Delegate
 
@@ -10,6 +11,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Don't show in Dock
         NSApp.setActivationPolicy(.accessory)
+
+        // Register bundled font (jf-openhuninn)
+        if let fontURL = Bundle.module.url(forResource: "jf-openhuninn-2.1", withExtension: "ttf") {
+            CTFontManagerRegisterFontsForURL(fontURL as CFURL, .process, nil)
+        }
 
         // Export built-in persona to user directory + load all personas
         PersonaDirectory.exportBuiltIn()
