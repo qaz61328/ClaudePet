@@ -42,7 +42,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         server = PetServer(petWindow: petWindow)
         do {
             try server.start()
-            print("[ClaudePet] HTTP Server started on port 23987")
+            print("[ClaudePet] v\(PersonaDirectory.appVersion) — HTTP Server started on port 23987")
         } catch {
             print("[ClaudePet] Failed to start server: \(error)")
         }

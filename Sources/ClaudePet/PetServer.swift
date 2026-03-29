@@ -133,7 +133,7 @@ class PetServer {
             let personaID = DialogueBank.current.id
             let sessionCount = activeSessions.count
             let chatterOn = Self.isChatterEnabled
-            sendResponse(conn, status: 200, body: #"{"status":"ok","persona":"\#(personaID)","activeSessions":\#(sessionCount),"chatterEnabled":\#(chatterOn)}"#)
+            sendResponse(conn, status: 200, body: #"{"status":"ok","version":"\#(PersonaDirectory.appVersion)","persona":"\#(personaID)","activeSessions":\#(sessionCount),"chatterEnabled":\#(chatterOn)}"#)
 
         case ("POST", "/notify"):
             handleNotify(conn: conn, body: body)

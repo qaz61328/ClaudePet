@@ -1,5 +1,7 @@
 # ClaudePet
 
+![Version](https://img.shields.io/badge/version-v0.1.0-blue)
+
 A macOS desktop pet that replaces Claude Code's terminal permission prompts with an interactive pixel-art character.
 
 ClaudePet sits on your desktop and intercepts Claude Code's notification and authorization events through hooks. When Claude Code finishes work, the character pops a speech bubble. When Claude Code needs permission to run a command or edit a file, the character shows an authorization bubble with approve/deny buttons. You click the bubble instead of typing in the terminal.

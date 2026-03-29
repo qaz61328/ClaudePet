@@ -47,6 +47,7 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
         quitItem.target = self
 
         menu.addItem(makeDisabledItem(title: "ClaudePet 🎩"))
+        menu.addItem(makeDisabledItem(title: "Version \(PersonaDirectory.appVersion)"))
         menu.addItem(.separator())
         let muteItem = NSMenuItem(title: "Mute", action: #selector(toggleMute), keyEquivalent: "")
         muteItem.target = self

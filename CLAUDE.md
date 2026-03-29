@@ -60,7 +60,7 @@ working --(/working active=false, no other sessions)--> idle
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/health` | Health check. Returns `{"status":"ok","persona":"<id>","activeSessions":<n>,"chatterEnabled":<bool>}` |
+| GET | `/health` | Health check. Returns `{"status":"ok","version":"<ver>","persona":"<id>","activeSessions":<n>,"chatterEnabled":<bool>}` |
 | POST | `/notify` | Notification (work complete, needs attention, etc.). Returns 200 immediately. Supports `type` field (`"ask"` = needs user decision, `"plan"` = Plan Mode plan ready) |
 | POST | `/authorize` | Authorization request. Holds the connection until the user clicks a button. 60-second timeout. |
 | POST | `/chatter` | Idle chatter (no sound). Returns 200 immediately. Body: `{"message":"mumble text"}`. Silently discarded if an auth/notify bubble is showing. |

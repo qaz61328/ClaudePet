@@ -238,11 +238,18 @@ enum PersonaDirectory {
 
     /// Persona directory (Personas/ under project root)
     static var baseURL: URL {
-        _projectRoot.appendingPathComponent("Personas")
+        projectRoot.appendingPathComponent("Personas")
     }
 
+    /// App version read from VERSION file at project root, fallback to "unknown"
+    static let appVersion: String = {
+        let url = projectRoot.appendingPathComponent("VERSION")
+        guard let raw = try? String(contentsOf: url, encoding: .utf8) else { return "unknown" }
+        return raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    }()
+
     /// Computed once: walk up from executable location to find Package.swift to locate project root
-    private static let _projectRoot: URL = {
+    private static let projectRoot: URL = {
         var dir = Bundle.main.executableURL?.deletingLastPathComponent() ?? URL(fileURLWithPath: ".")
         while dir.path != "/" {
             if FileManager.default.fileExists(atPath: dir.appendingPathComponent("Package.swift").path) {
