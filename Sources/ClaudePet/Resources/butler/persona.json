@@ -1,0 +1,161 @@
+{
+  "id": "butler",
+  "displayName": "ClaudePet",
+  "greeting": {
+    "morning": [
+      "Good morning! Ready to code?",
+      "Morning! Coffee's brewing (not really)",
+      "Rise and shine! Let's get things done",
+      "Good morning! What's on the agenda?",
+      "Morning! Fresh start, fresh code",
+      "Hey, good morning! Let's make today count"
+    ],
+    "afternoon": [
+      "Good afternoon! Keep it up",
+      "Afternoon! Looking good on progress",
+      "Hey, maybe give your eyes a break?",
+      "Good afternoon! Had lunch yet?",
+      "Afternoon check-in: all systems go",
+      "Good afternoon! Halfway through the day"
+    ],
+    "evening": [
+      "Good evening! Winding down?",
+      "Evening! Nice work today",
+      "Getting late, take it easy",
+      "Good evening! Switching to night mode",
+      "Evening! You've been productive today",
+      "Good evening. Rest is part of the process"
+    ],
+    "lateNight": [
+      "Still up at this hour?",
+      "Friendly reminder: sleep is important",
+      "It's really late... maybe call it a night?",
+      "I don't need sleep, but you do",
+      "Late night session... got an early morning?",
+      "Burning the midnight oil, I see"
+    ]
+  },
+  "taskComplete": {
+    "generic": [
+      "All done!",
+      "Task complete, ready for review",
+      "Finished! Take a look",
+      "Done! Ready for your check",
+      "Wrapped up, have a look",
+      "Complete! Over to you",
+      "That's a wrap",
+      "Done and dusted"
+    ],
+    "withProject": [
+      "{project} is all done!",
+      "{project} task complete, ready for review",
+      "Finished {project}! Take a look",
+      "{project} done! Ready for your check",
+      "Wrapped up {project}, have a look",
+      "{project} complete! Over to you",
+      "That's a wrap on {project}",
+      "{project} is done and dusted"
+    ]
+  },
+  "authorize": {
+    "openers": [
+      "Authorization needed",
+      "Need your permission for this",
+      "This step requires your OK",
+      "May I proceed?"
+    ],
+    "fileToolLabels": {
+      "Edit": { "pathIcon": "\ud83d\udcc4", "actionLabel": "\u270f\ufe0f Edit File" },
+      "Write": { "pathIcon": "\ud83d\udcc4", "actionLabel": "\ud83d\udcdd Write File" },
+      "NotebookEdit": { "pathIcon": "\ud83d\udcd3", "actionLabel": "\u270f\ufe0f Edit Notebook" }
+    }
+  },
+  "authorized": [
+    "Got it, on it!",
+    "Roger that",
+    "Understood, executing now",
+    "Thanks! Running it",
+    "Alright, let's go",
+    "On it!",
+    "You got it"
+  ],
+  "denied": [
+    "OK, standing down",
+    "Understood, cancelled",
+    "Alright, skipping that",
+    "Got it, backing off",
+    "No problem, cancelled",
+    "Fair enough, moving on",
+    "OK, won't do that"
+  ],
+  "clicked": [
+    "Hey there!",
+    "What's up?",
+    "Need something?",
+    "You rang?",
+    "Hi! What can I do?",
+    "Hey! I'm here",
+    "What's on your mind?",
+    "Poke! ...wait, that's my line",
+    "At your service!",
+    "Yep, still here!",
+    "Hello! How can I help?",
+    "Hmm? Something on my face?",
+    "Easy on the clicks!",
+    "Always here for you"
+  ],
+  "switchToTerminal": [
+    "Right this way",
+    "Heading to the terminal",
+    "Let me take you there",
+    "Terminal, coming right up",
+    "Follow me!",
+    "Opening the way",
+    "Here's your terminal",
+    "Off we go"
+  ],
+  "needsAttention": {
+    "generic": [
+      "Got a question for you",
+      "Could you take a look?",
+      "Need your input on something",
+      "There's a decision to make",
+      "Got a few options, need your pick",
+      "Stuck on something, need your help",
+      "Mind taking a look at this?",
+      "Hit a fork in the road, need directions"
+    ],
+    "withProject": [
+      "Got a question about {project}",
+      "{project} needs your attention",
+      "Need your input on {project}",
+      "{project} has a decision to make",
+      "{project} has options, need your pick",
+      "Stuck on {project}, need your help",
+      "{project} needs you to take a look",
+      "Hit a fork in {project}, need directions"
+    ]
+  },
+  "planReady": {
+    "generic": [
+      "Plan is ready for review",
+      "Draft plan is done, take a look",
+      "Here's the plan, your call",
+      "Plan complete, ready for approval",
+      "Blueprint's ready, waiting on you",
+      "Plan drafted, need your sign-off",
+      "Strategy is set, ready for review",
+      "Action plan ready, awaiting your go"
+    ],
+    "withProject": [
+      "{project} plan is ready for review",
+      "{project} draft plan is done, take a look",
+      "Here's the {project} plan, your call",
+      "{project} plan complete, ready for approval",
+      "{project} blueprint's ready, waiting on you",
+      "{project} plan drafted, need your sign-off",
+      "{project} strategy is set, ready for review",
+      "{project} action plan ready, awaiting your go"
+    ]
+  }
+}

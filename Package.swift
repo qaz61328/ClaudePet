@@ -1,0 +1,18 @@
+// swift-tools-version: 5.9
+
+import PackageDescription
+
+let package = Package(
+    name: "ClaudePet",
+    platforms: [.macOS(.v13)],
+    targets: [
+        .executableTarget(
+            name: "ClaudePet",
+            resources: [
+                .copy("Resources/butler"),
+                .copy("Resources/statusbar_icon.png"),
+                .copy("Resources/statusbar_icon@2x.png"),
+            ]
+        )
+    ]
+)

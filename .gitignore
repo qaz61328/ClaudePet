@@ -1,0 +1,5 @@
+.build/
+Personas/
+.claude/scheduled_tasks.lock
+sprites_preview/
+.claude/settings.local.json
