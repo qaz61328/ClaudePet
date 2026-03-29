@@ -35,6 +35,15 @@ class PetView: NSView {
     /// Whether any session is actively working (controlled by PetServer via startWorking/stopWorking)
     private(set) var isWorking = false
 
+    /// Drag tracking: screen-space mouse position at mouseDown
+    private var dragStartScreenPos: NSPoint?
+    /// Drag tracking: window origin at mouseDown
+    private var dragStartWindowOrigin: NSPoint?
+    /// Whether a drag gesture was detected (distinguishes drag from click)
+    private var didDrag = false
+    /// Minimum distance to count as a drag instead of a click
+    private let dragThreshold: CGFloat = 3
+
     // MARK: - Constants
 
     private let spriteDisplaySize: CGFloat = 96
@@ -234,6 +243,33 @@ class PetView: NSView {
     // MARK: - Mouse Events
 
     override func mouseDown(with event: NSEvent) {
+        // Record drag start position (screen coordinates)
+        dragStartScreenPos = NSEvent.mouseLocation
+        dragStartWindowOrigin = window?.frame.origin
+        didDrag = false
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let startScreen = dragStartScreenPos,
+              let startOrigin = dragStartWindowOrigin else { return }
+        let currentScreen = NSEvent.mouseLocation
+        let dx = currentScreen.x - startScreen.x
+        let dy = currentScreen.y - startScreen.y
+        if !didDrag && (dx * dx + dy * dy) < dragThreshold * dragThreshold { return }
+        didDrag = true
+        let newOrigin = NSPoint(x: startOrigin.x + dx, y: startOrigin.y + dy)
+        window?.setFrameOrigin(newOrigin)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        defer {
+            dragStartScreenPos = nil
+            dragStartWindowOrigin = nil
+            didDrag = false
+        }
+        // If it was a drag, no click action
+        if didDrag { return }
+
         // Auth bubble dismissed but request still pending — click character to re-show
         if animationState == .alert, authBubble == nil, let pending = pendingAuth {
             showAuthBubble(text: pending.text, onDecision: pending.onDecision)

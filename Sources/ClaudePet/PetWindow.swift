@@ -5,6 +5,11 @@ import AppKit
 /// Window that allows click-through on transparent areas
 class ClickThroughWindow: NSWindow {
     override var canBecomeKey: Bool { true }
+
+    /// Disable screen-edge constraint for all frame changes (drag, auth bubble expansion, etc.)
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+        return frameRect
+    }
 }
 
 // MARK: - Pet Window
@@ -16,6 +21,7 @@ class PetWindow {
 
     let window: ClickThroughWindow
     let petView: PetView
+    private var savePositionTimer: Timer?
 
     init() {
         let size = NSSize(width: 340, height: 380) // Character + bubble space (incl. 3-button auth bubble + shadow margin)
@@ -34,19 +40,20 @@ class PetWindow {
         window.hasShadow = false
         window.level = .floating
         window.collectionBehavior = [.canJoinAllSpaces, .stationary]
-        window.isMovableByWindowBackground = true
+        // Dragging is handled by PetView (custom mouseDragged) for unrestricted movement
+        window.isMovableByWindowBackground = false
 
         petView = PetView()
         window.contentView = petView
 
-        // Observe window movement, persist position
+        // Observe window movement, debounce position persistence (avoids ~60 writes/sec during drag)
         NotificationCenter.default.addObserver(
             forName: NSWindow.didMoveNotification,
             object: window,
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
-                self?.savePosition()
+                self?.scheduleSavePosition()
             }
         }
     }
@@ -69,10 +76,16 @@ class PetWindow {
 
     // MARK: - Position Persistence
 
-    private func savePosition() {
-        let origin = window.frame.origin
-        UserDefaults.standard.set(Double(origin.x), forKey: PetWindow.posXKey)
-        UserDefaults.standard.set(Double(origin.y), forKey: PetWindow.posYKey)
+    private func scheduleSavePosition() {
+        savePositionTimer?.invalidate()
+        savePositionTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                let origin = self.window.frame.origin
+                UserDefaults.standard.set(Double(origin.x), forKey: PetWindow.posXKey)
+                UserDefaults.standard.set(Double(origin.y), forKey: PetWindow.posYKey)
+            }
+        }
     }
 
     private static func savedOrigin() -> NSPoint? {
