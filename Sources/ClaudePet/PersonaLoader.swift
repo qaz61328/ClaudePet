@@ -249,7 +249,7 @@ enum PersonaDirectory {
     }()
 
     /// Computed once: walk up from executable location to find Package.swift to locate project root
-    private static let projectRoot: URL = {
+    static let projectRoot: URL = {
         var dir = Bundle.main.executableURL?.deletingLastPathComponent() ?? URL(fileURLWithPath: ".")
         while dir.path != "/" {
             if FileManager.default.fileExists(atPath: dir.appendingPathComponent("Package.swift").path) {
