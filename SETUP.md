@@ -113,6 +113,43 @@ claude() {
 
 After editing your RC file, run `source ~/.zshrc` or open a new terminal.
 
+## Update
+
+Click **Check for Updates** in the status bar menu. ClaudePet checks the latest [GitHub Release](https://github.com/qaz61328/ClaudePet/releases) and handles the upgrade automatically: pull the latest code, rebuild, update all configs, and restart.
+
+To update manually:
+
+```bash
+git pull origin main
+bash scripts/upgrade.sh
+```
+
+The upgrade script:
+1. Rebuilds the release binary
+2. Updates Claude Code hooks in `~/.claude/settings.json` (removes old entries, writes current ones)
+3. Replaces the idle chatter block in `~/.claude/CLAUDE.md`
+4. Updates the shell wrapper if the project path changed
+5. Restarts ClaudePet
+
+## Uninstall
+
+```bash
+bash scripts/uninstall.sh
+```
+
+The script asks for confirmation, then:
+1. Stops the ClaudePet process
+2. Removes ClaudePet hooks and permissions from `~/.claude/settings.json`
+3. Removes the idle chatter block from `~/.claude/CLAUDE.md`
+4. Removes the `claude()` shell wrapper from your RC file
+5. Cleans up temp files (`/tmp/claudepet-*`)
+
+Your other settings in `settings.json` and `CLAUDE.md` are preserved. The script does not delete the repo — do that yourself if you want:
+
+```bash
+rm -rf /path/to/ClaudePet
+```
+
 ## Custom Personas
 
 The fastest way to create a persona: run `/create-persona` inside Claude Code. It asks you about the character and generates dialogue, sprites, and sounds.

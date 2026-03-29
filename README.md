@@ -1,6 +1,6 @@
 # ClaudePet
 
-![Version](https://img.shields.io/badge/version-v0.1.0-blue)
+![Version](https://img.shields.io/badge/version-v0.1.2-blue)
 
 A macOS desktop pet that replaces Claude Code's terminal permission prompts with an interactive pixel-art character.
 
@@ -38,6 +38,27 @@ bash scripts/setup.sh
 The setup script builds the binary, configures Claude Code hooks, sets up idle chatter scheduling, and adds a shell wrapper so ClaudePet launches with every `claude` invocation.
 
 For step-by-step instructions or manual configuration, see [SETUP.md](SETUP.md).
+
+## Update
+
+Click **Check for Updates** in the status bar menu. ClaudePet checks the latest GitHub Release and walks you through the upgrade automatically.
+
+To update manually:
+
+```bash
+git pull origin main
+bash scripts/upgrade.sh
+```
+
+The upgrade script rebuilds the binary, updates Claude Code hooks and configs, and restarts ClaudePet.
+
+## Uninstall
+
+```bash
+bash scripts/uninstall.sh
+```
+
+This removes all ClaudePet environment configs: Claude Code hooks, idle chatter scheduling, the shell wrapper, and temp files. It does not delete the repo itself.
 
 ## Personas
 

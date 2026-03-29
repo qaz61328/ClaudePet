@@ -113,6 +113,43 @@ claude() {
 
 改完 RC 檔後跑 `source ~/.zshrc`，或開新終端機。
 
+## 升級
+
+點狀態列選單的 **Check for Updates**，ClaudePet 會檢查最新的 [GitHub Release](https://github.com/qaz61328/ClaudePet/releases)，有新版的話自動拉取程式碼、重新編譯、更新設定、重啟。
+
+手動升級：
+
+```bash
+git pull origin main
+bash scripts/upgrade.sh
+```
+
+升級腳本做的事：
+1. 重新編譯 release binary
+2. 更新 `~/.claude/settings.json` 裡的 hooks（移除舊設定，寫入新版）
+3. 替換 `~/.claude/CLAUDE.md` 裡的閒聊排程區塊
+4. 如果專案路徑有變，更新 shell wrapper
+5. 重啟 ClaudePet
+
+## 移除
+
+```bash
+bash scripts/uninstall.sh
+```
+
+腳本會先確認你要不要繼續，確認後：
+1. 停止 ClaudePet 程序
+2. 從 `~/.claude/settings.json` 移除 ClaudePet 的 hooks 和 permissions
+3. 從 `~/.claude/CLAUDE.md` 移除閒聊排程區塊
+4. 從 RC 檔移除 `claude()` shell wrapper
+5. 清除暫存檔（`/tmp/claudepet-*`）
+
+其他的 `settings.json` 和 `CLAUDE.md` 設定不受影響。腳本不會刪除 repo，要刪的話自己來：
+
+```bash
+rm -rf /path/to/ClaudePet
+```
+
 ## 自訂角色
 
 最快的方法：在 Claude Code 裡跑 `/create-persona`。它會問你角色設定，然後自動產生台詞、像素圖和音效。
