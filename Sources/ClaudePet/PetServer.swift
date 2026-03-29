@@ -133,7 +133,8 @@ class PetServer {
             let personaID = DialogueBank.current.id
             let sessionCount = activeSessions.count
             let chatterOn = Self.isChatterEnabled
-            sendResponse(conn, status: 200, body: #"{"status":"ok","version":"\#(PersonaDirectory.appVersion)","persona":"\#(personaID)","activeSessions":\#(sessionCount),"chatterEnabled":\#(chatterOn)}"#)
+            let termAuth = Self.isTerminalAuthMode
+            sendResponse(conn, status: 200, body: #"{"status":"ok","version":"\#(PersonaDirectory.appVersion)","persona":"\#(personaID)","activeSessions":\#(sessionCount),"chatterEnabled":\#(chatterOn),"terminalAuthMode":\#(termAuth)}"#)
 
         case ("POST", "/notify"):
             handleNotify(conn: conn, body: body)
@@ -344,6 +345,33 @@ class PetServer {
             (UserDefaults.standard.object(forKey: chatterEnabledKey) as? Bool) ?? true
         }
         set { UserDefaults.standard.set(newValue, forKey: chatterEnabledKey) }
+    }
+
+    // MARK: - Authorization Mode
+
+    private static let terminalAuthModeKey = "terminalAuthMode"
+    static let passthroughAuthFlagPath = "/tmp/claudepet-passthrough-auth"
+
+    /// true = Terminal handles auth (hook sends notification only, exits 0)
+    /// false = Pet handles auth (hook calls /authorize, pet shows bubble)
+    static var isTerminalAuthMode: Bool {
+        get {
+            (UserDefaults.standard.object(forKey: terminalAuthModeKey) as? Bool) ?? false
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: terminalAuthModeKey)
+            syncPassthroughAuthFlag()
+        }
+    }
+
+    /// Sync file flag to match UserDefaults (called on toggle and on launch)
+    static func syncPassthroughAuthFlag() {
+        let fm = FileManager.default
+        if isTerminalAuthMode {
+            fm.createFile(atPath: passthroughAuthFlagPath, contents: nil)
+        } else {
+            try? fm.removeItem(atPath: passthroughAuthFlagPath)
+        }
     }
 
     private func handleChatter(conn: NWConnection, body: Data?) {

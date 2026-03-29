@@ -7,6 +7,7 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
     private static let personaMenuTag = 100
     private static let muteItemTag = 101
     private static let chatterItemTag = 102
+    private static let authModeItemTag = 103
 
     private var statusItem: NSStatusItem?
     private weak var petWindow: PetWindow?
@@ -60,7 +61,12 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
         menu.addItem(showHideItem)
         menu.addItem(sayHelloItem)
         menu.addItem(muteItem)
+        let authModeItem = NSMenuItem(title: "Passthrough Auth", action: #selector(toggleAuthMode), keyEquivalent: "")
+        authModeItem.target = self
+        authModeItem.tag = Self.authModeItemTag
+
         menu.addItem(chatterItem)
+        menu.addItem(authModeItem)
         menu.addItem(.separator())
         let personaItem = NSMenuItem(title: "Persona", action: nil, keyEquivalent: "")
         personaItem.submenu = NSMenu()
@@ -91,6 +97,10 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
         // Idle chatter toggle check state
         if let chatterItem = menu.item(withTag: Self.chatterItemTag) {
             chatterItem.state = PetServer.isChatterEnabled ? .on : .off
+        }
+        // Terminal auth mode toggle check state
+        if let authModeItem = menu.item(withTag: Self.authModeItemTag) {
+            authModeItem.state = PetServer.isTerminalAuthMode ? .on : .off
         }
 
         guard let personaItem = menu.item(withTag: Self.personaMenuTag),
@@ -145,6 +155,10 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
 
     @objc private func toggleChatter() {
         PetServer.isChatterEnabled.toggle()
+    }
+
+    @objc private func toggleAuthMode() {
+        PetServer.isTerminalAuthMode.toggle()
     }
 
     private var isUpgrading = false

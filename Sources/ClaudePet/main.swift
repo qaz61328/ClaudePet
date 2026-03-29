@@ -38,6 +38,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let greeting = NotifyPayload(project: "", message: DialogueBank.greeting())
         petWindow.petView.showNotification(payload: greeting, sound: .startup)
 
+        // Sync passthrough auth flag file on launch
+        PetServer.syncPassthroughAuthFlag()
+
         // Start HTTP Server
         server = PetServer(petWindow: petWindow)
         do {
@@ -55,6 +58,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         // Clean up session authorization memory
         try? FileManager.default.removeItem(atPath: "/tmp/claudepet-session-allow")
+        try? FileManager.default.removeItem(atPath: PetServer.passthroughAuthFlagPath)
     }
 }
 

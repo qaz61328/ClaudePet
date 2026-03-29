@@ -76,6 +76,10 @@ Personas/
   "planReady": {
     "generic":     ["Notification when Plan Mode plan is ready (without project name)"],
     "withProject": ["Version with project name, use {project} as placeholder"]
+  },
+  "checkTerminalAuth": {
+    "generic":     ["Notification in passthrough auth mode — alert user that authorization is needed (optional, has fallback)"],
+    "withProject": ["Version with project name, use {project} as placeholder"]
   }
 }
 ```
@@ -99,6 +103,7 @@ Personas/
 | switchToTerminal | Guiding user back to the terminal | Lead the way, point to terminal |
 | needsAttention | Claude Code needs user decision | Alert, request attention |
 | planReady | Plan Mode plan is prepared | Report the plan, request approval |
+| checkTerminalAuth | Passthrough auth mode, tool needs permission | Alert user that authorization is waiting for their decision |
 
 ### Avoiding Repetition
 - Avoid identical sentence structures within each pool
