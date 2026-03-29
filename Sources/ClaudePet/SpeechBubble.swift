@@ -289,6 +289,8 @@ class AuthBubbleView: NSView, BubbleSizable {
     private var borderLayer: CAShapeLayer?
     /// Cached button widths (text is static, computed once)
     private let buttonWidths: (CGFloat, CGFloat, CGFloat)
+    /// Minimum width needed to fit all three buttons in a row
+    private let minimumWidth: CGFloat
 
     init(text: String, onDecision: @escaping (AuthDecision) -> Void) {
         self.onDecision = onDecision
@@ -299,11 +301,11 @@ class AuthBubbleView: NSView, BubbleSizable {
         approveSessionButton = makePillButton(title: "✓ Always Allow", color: .systemBlue)
         denyButton = makePillButton(title: "✗ Deny", color: .systemRed)
 
-        buttonWidths = (
-            Self.fittingButtonWidth(for: approveButton),
-            Self.fittingButtonWidth(for: approveSessionButton),
-            Self.fittingButtonWidth(for: denyButton)
-        )
+        let w1 = Self.fittingButtonWidth(for: approveButton)
+        let w2 = Self.fittingButtonWidth(for: approveSessionButton)
+        let w3 = Self.fittingButtonWidth(for: denyButton)
+        buttonWidths = (w1, w2, w3)
+        minimumWidth = w1 + w2 + w3 + Self.buttonSpacing * 2 + bubblePadding * 2
 
         super.init(frame: .zero)
 
@@ -363,6 +365,10 @@ class AuthBubbleView: NSView, BubbleSizable {
         approveButton.frame = NSRect(x: startX, y: buttonY, width: w1, height: bh)
         approveSessionButton.frame = NSRect(x: startX + w1 + sp, y: buttonY, width: w2, height: bh)
         denyButton.frame = NSRect(x: startX + w1 + sp + w2 + sp, y: buttonY, width: w3, height: bh)
+    }
+
+    func fittingWidth(maxWidth: CGFloat) -> CGFloat {
+        max(minimumWidth, maxWidth)
     }
 
     func fittingHeight(forWidth width: CGFloat) -> CGFloat {

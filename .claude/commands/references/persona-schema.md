@@ -129,7 +129,7 @@ The `chatter-prompt.md` file in the persona directory is read by Claude Code's C
 
 **Optional**: Personas without this file will work normally — they just won't have scheduled idle chatter.
 
-Example reference: `Personas/butler/chatter-prompt.md`
+Example reference: `Personas/default/chatter-prompt.md`
 
 ## Sprite Specifications
 
@@ -161,7 +161,7 @@ The script's `main()` output directory should be set to the script's own folder:
 out = os.path.dirname(os.path.abspath(__file__))
 ```
 
-## Built-in Butler Example
+## Built-in Default Example
 
-A complete butler persona JSON example can be found in the project at:
-`Sources/ClaudePet/Resources/butler/persona.json`
+A complete persona JSON example can be found in the project at:
+`Sources/ClaudePet/Resources/default/persona.json`

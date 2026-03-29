@@ -120,8 +120,8 @@ The fastest way to create a persona: run `/create-persona` inside Claude Code. I
 To build one by hand, create a directory under `Personas/<your-id>/` with:
 
 - `persona.json` (dialogue definitions, see `.claude/commands/references/persona-schema.md` for the schema)
-- 16 sprite PNGs: `idle_1.png` through `idle_4.png`, `bow_1.png` through `bow_4.png`, `alert_1.png` through `alert_4.png`, `happy_1.png` through `happy_4.png` (64x64 pixels, transparent background)
-- Sound files: `notify.aif` or `notify.wav` or `notify.mp3` (optional)
+- 20 sprite PNGs: `idle_1.png` through `idle_4.png`, `bow_1.png` through `bow_4.png`, `alert_1.png` through `alert_4.png`, `happy_1.png` through `happy_4.png`, `working_1.png` through `working_4.png` (64x64 pixels, transparent background)
+- Sound files (optional, supports .aif/.wav/.mp3): `startup.aif` (launch), `notify.aif` (notifications), `authorize.aif` (authorization prompts)
 - `chatter-prompt.md` (defines chatter behavior for this persona, optional)
 
 All of these except `persona.json` are optional. Missing sprites fall back to the built-in set, and missing sounds fall back to silence.
@@ -170,7 +170,7 @@ Test the server directly:
 curl http://127.0.0.1:23987/health
 ```
 
-You should get back `{"status":"ok","persona":"butler",...}`. If the request fails, ClaudePet isn't running or something else is using port 23987.
+You should get back `{"status":"ok","persona":"default",...}`. If the request fails, ClaudePet isn't running or something else is using port 23987.
 
 **Idle chatter isn't firing**
 

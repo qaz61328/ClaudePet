@@ -82,7 +82,7 @@ enum SoundPlayer {
         return nil
     }
 
-    /// Tier 2: Built-in sounds (Bundle.module/butler/notify.aif etc.)
+    /// Tier 2: Built-in sounds (Bundle.module/default/notify.aif etc.)
     private static func loadFromBundle(event: SoundEvent) -> NSSound? {
         for ext in PersonaDirectory.soundExtensions {
             if let url = Bundle.module.url(

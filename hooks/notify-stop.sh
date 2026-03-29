@@ -16,10 +16,17 @@ if [ -n "$SESSION_ID" ]; then
 fi
 
 # Idle chatter lock: cron-triggered chatter sessions don't need a "work complete" notification
+# Use time-based check instead of delete-on-first-read to handle multiple Stop events
 CHATTER_LOCK="/tmp/claudepet-chatter-lock"
 if [ -f "$CHATTER_LOCK" ]; then
-    rm -f "$CHATTER_LOCK"
-    exit 0
+    LOCK_AGE=$(( $(date +%s) - $(stat -f %m "$CHATTER_LOCK") ))
+    if [ "$LOCK_AGE" -lt 60 ]; then
+        # Recent lock → chatter session still in progress, skip notification
+        exit 0
+    else
+        # Stale lock → clean up and proceed with notification
+        rm -f "$CHATTER_LOCK"
+    fi
 fi
 
 # Try to notify ClaudePet

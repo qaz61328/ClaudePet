@@ -225,7 +225,7 @@ struct DataDrivenPersona: Persona {
 
 @MainActor
 enum PersonaDirectory {
-    static let builtInPersonaID = "butler"
+    static let builtInPersonaID = "default"
 
     /// Sprite state names (idle/bow/alert/happy/working)
     static let spriteStates = ["idle", "bow", "alert", "happy", "working"]
@@ -321,12 +321,12 @@ enum PersonaDirectory {
 
     static func exportBuiltIn() {
         let fm = FileManager.default
-        let butlerDir = baseURL.appendingPathComponent(builtInPersonaID)
+        let defaultDir = baseURL.appendingPathComponent(builtInPersonaID)
 
-        let jsonDest = butlerDir.appendingPathComponent("persona.json")
+        let jsonDest = defaultDir.appendingPathComponent("persona.json")
         if fm.fileExists(atPath: jsonDest.path) { return }
 
-        try? fm.createDirectory(at: butlerDir, withIntermediateDirectories: true)
+        try? fm.createDirectory(at: defaultDir, withIntermediateDirectories: true)
 
         if let bundledJSON = Bundle.module.url(forResource: "persona", withExtension: "json", subdirectory: builtInPersonaID) {
             try? fm.copyItem(at: bundledJSON, to: jsonDest)
@@ -338,7 +338,7 @@ enum PersonaDirectory {
             while true {
                 let name = "\(state)_\(frame)"
                 guard let bundledPNG = Bundle.module.url(forResource: name, withExtension: "png", subdirectory: builtInPersonaID) else { break }
-                let dest = butlerDir.appendingPathComponent("\(name).png")
+                let dest = defaultDir.appendingPathComponent("\(name).png")
                 try? fm.copyItem(at: bundledPNG, to: dest)
                 frame += 1
             }
@@ -348,7 +348,7 @@ enum PersonaDirectory {
         for event in SoundEvent.allCases {
             for ext in soundExtensions {
                 if let bundledSound = Bundle.module.url(forResource: event.rawValue, withExtension: ext, subdirectory: builtInPersonaID) {
-                    let dest = butlerDir.appendingPathComponent("\(event.rawValue).\(ext)")
+                    let dest = defaultDir.appendingPathComponent("\(event.rawValue).\(ext)")
                     try? fm.copyItem(at: bundledSound, to: dest)
                 }
             }
@@ -356,10 +356,10 @@ enum PersonaDirectory {
 
         // Export chatter prompt
         if let bundledChatter = Bundle.module.url(forResource: "chatter-prompt", withExtension: "md", subdirectory: builtInPersonaID) {
-            let chatterDest = butlerDir.appendingPathComponent("chatter-prompt.md")
+            let chatterDest = defaultDir.appendingPathComponent("chatter-prompt.md")
             try? fm.copyItem(at: bundledChatter, to: chatterDest)
         }
 
-        print("[PersonaLoader] Built-in persona exported to \(butlerDir.path)")
+        print("[PersonaLoader] Built-in persona exported to \(defaultDir.path)")
     }
 }

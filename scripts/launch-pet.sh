@@ -2,7 +2,9 @@
 # ClaudePet Singleton Launcher
 # Check if already running, only start if not
 
-BINARY="$HOME/GitHub/ClaudePet/.build/release/ClaudePet"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+BINARY="$PROJECT_DIR/.build/release/ClaudePet"
 HEALTH_URL="http://127.0.0.1:23987/health"
 
 # Already running → skip
@@ -13,7 +15,7 @@ fi
 # Binary not found → try to build
 if [ ! -f "$BINARY" ]; then
   echo "[ClaudePet] Binary not found, building..."
-  (cd "$HOME/GitHub/ClaudePet" && swift build -c release 2>/dev/null)
+  (cd "$PROJECT_DIR" && swift build -c release 2>/dev/null)
 fi
 
 # Launch in background, detached from terminal

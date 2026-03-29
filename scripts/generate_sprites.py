@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ClaudePet Sprite Generator (64x64)
-Generates pixel art butler character based on Claude mascot (orange rounded square)
+Generates pixel art character based on Claude mascot (orange rounded square)
 4 frames per animation state (idle/bow/alert/happy/working x 4 = 20 PNGs)
 PIL coordinate system: y=0 at top, y increases downward
 
@@ -604,7 +604,7 @@ def main():
 
     out = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "Sources", "ClaudePet", "Resources", "butler"
+        "Sources", "ClaudePet", "Resources", "default"
     )
     os.makedirs(out, exist_ok=True)
 

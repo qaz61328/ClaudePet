@@ -120,8 +120,8 @@ claude() {
 要手動做的話，在 `Personas/<your-id>/` 建一個資料夾，裡面放：
 
 - `persona.json`（台詞定義，格式參考 `.claude/commands/references/persona-schema.md`）
-- 16 張 sprite PNG：`idle_1.png` 到 `idle_4.png`、`bow_1.png` 到 `bow_4.png`、`alert_1.png` 到 `alert_4.png`、`happy_1.png` 到 `happy_4.png`（64x64 像素，透明背景）
-- 音效檔：`notify.aif` 或 `notify.wav` 或 `notify.mp3`（可選）
+- 20 張 sprite PNG：`idle_1.png` 到 `idle_4.png`、`bow_1.png` 到 `bow_4.png`、`alert_1.png` 到 `alert_4.png`、`happy_1.png` 到 `happy_4.png`、`working_1.png` 到 `working_4.png`（64x64 像素，透明背景）
+- 音效檔（可選，支援 .aif/.wav/.mp3）：`startup.aif`（啟動音效）、`notify.aif`（通知音效）、`authorize.aif`（授權音效）
 - `chatter-prompt.md`（定義這個角色的閒聊行為，可選）
 
 除了 `persona.json` 以外都是可選的。沒有 sprite 就用內建的，沒有音效就靜音。
@@ -170,7 +170,7 @@ Hook 腳本需要 `jq` 來解析 Claude Code 的 JSON 輸入。沒裝的話，Pr
 curl http://127.0.0.1:23987/health
 ```
 
-應該拿到 `{"status":"ok","persona":"butler",...}`。如果請求失敗，表示 ClaudePet 沒在跑，或其他東西佔了 port 23987。
+應該拿到 `{"status":"ok","persona":"default",...}`。如果請求失敗，表示 ClaudePet 沒在跑，或其他東西佔了 port 23987。
 
 **閒聊不會觸發**
 

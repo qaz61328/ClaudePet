@@ -18,7 +18,7 @@ class PetWindow {
     let petView: PetView
 
     init() {
-        let size = NSSize(width: 320, height: 380) // Character + bubble space (incl. 3-button auth bubble, 8 lines of text)
+        let size = NSSize(width: 340, height: 380) // Character + bubble space (incl. 3-button auth bubble + shadow margin)
         let origin = PetWindow.savedOrigin() ?? PetWindow.defaultOrigin(size: size)
         let frame = NSRect(origin: origin, size: size)
 

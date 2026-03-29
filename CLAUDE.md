@@ -20,11 +20,11 @@ PetView.swift           # Character rendering + animation state machine + bubble
 SpeechBubble.swift      # Notification bubble (SpeechBubbleView) + authorization bubble (AuthBubbleView)
 SoundPlayer.swift       # Sound playback (NSSound) + per-persona sound loading + fallback
 PetServer.swift         # HTTP Server (NWListener + CFHTTPMessage)
-DialogueBank.swift      # Persona protocol + ButlerPersona (fallback) + DialogueBank facade
+DialogueBank.swift      # Persona protocol + DefaultPersona (fallback) + DialogueBank facade
 PersonaLoader.swift     # PersonaData (JSON model) + DataDrivenPersona + AuthorizeFormatter + PersonaDirectory
 TerminalActivator.swift # Click-to-switch-to-terminal (detects iTerm2/Terminal.app + AppleScript tab switching)
 StatusBarMenu.swift     # Status bar menu + persona switching submenu
-Resources/              # Built-in pixel sprites PNG + persona.json (butler/ subdirectory)
+Resources/              # Built-in pixel sprites PNG + persona.json (default/ subdirectory)
 ```
 
 ### Core Components
@@ -115,14 +115,14 @@ The persona system uses a dual architecture: JSON data-driven with Swift fallbac
 
 **Data layer (JSON):**
 - Persona data lives in `Personas/<id>/` under the project root
-- Each persona contains `persona.json` (dialogue) + 16 sprite PNGs (4 frames per state, optional) + sound files (optional) + `chatter-prompt.md` (chatter prompt, optional)
-- On first launch, ClaudePet exports the built-in butler persona to `Personas/butler/`
+- Each persona contains `persona.json` (dialogue) + 20 sprite PNGs (5 states × 4 frames, optional) + sound files (optional) + `chatter-prompt.md` (chatter prompt, optional)
+- On first launch, ClaudePet exports the built-in default persona to `Personas/default/`
 - JSON schema defined in `.claude/commands/references/persona-schema.md`
 
 **Code layer (Swift):**
 - `Persona` protocol: defines 9 dialogue methods
 - `DataDrivenPersona`: loads from JSON, implements the Persona protocol
-- `ButlerPersona`: hardcoded butler character (fallback if JSON is corrupted)
+- `DefaultPersona`: hardcoded default character (fallback if JSON is corrupted)
 - `AuthorizeFormatter`: shared assembly logic for authorization text (simplifyCommand, etc.)
 - `PersonaDirectory`: scans the `Personas/` directory and loads all personas
 - `DialogueBank`: unified entry facade. Callers don't need to know which persona is active.
@@ -174,16 +174,16 @@ swift run                # launch (debug)
 
 ### Sprite Resources
 
-- 16 PNGs (idle/bow/alert/happy, 4 frames each), stored in `Sources/ClaudePet/Resources/`
-- `persona.json` in `Resources/butler/` subdirectory (built-in butler dialogue)
-- Sound files (`notify.aif`, `authorize.aif`) in `Resources/butler/` subdirectory
-- `Package.swift` configured with `.copy("Resources/butler")`
+- 20 PNGs (idle/bow/alert/happy/working, 4 frames each), stored in `Sources/ClaudePet/Resources/`
+- `persona.json` in `Resources/default/` subdirectory (built-in default dialogue)
+- Sound files (`notify.mp3`, `authorize.mp3`) in `Resources/default/` subdirectory
+- `Package.swift` configured with `.copy("Resources/default")`
 - Missing PNGs fall back to code-generated placeholder sprites
 - Missing sounds fall back to silence
 
-### Built-in Butler Persona
+### Built-in Default Persona
 
-- Addresses the user as a respectful but playful butler
+- Friendly, casual tone
 - Dialogue varies by time of day (morning/afternoon/evening/late night)
 - Greets on startup
 

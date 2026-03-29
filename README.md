@@ -17,26 +17,11 @@ ClaudePet sits on your desktop and intercepts Claude Code's notification and aut
 
 ## How it works
 
-ClaudePet runs an HTTP server on `127.0.0.1:23987`. Two Claude Code hooks feed it events:
-
-```
-Claude Code
-    |
-    +-- Stop hook ------------ POST /notify ------> speech bubble ("work complete")
-    |
-    +-- PreToolUse hook
-          +-- AskUserQuestion - POST /notify ------> speech bubble ("needs your input")
-          +-- ExitPlanMode ---- POST /notify ------> speech bubble ("plan ready")
-          |
-          +-- Bash/Edit/Write - POST /authorize ---> authorization bubble (approve / always / deny)
-                                                     holds the HTTP connection until you click
-                                                     Claude Code pauses in the meantime
-
-CronCreate (scheduled / spontaneous)
-    +-- POST /chatter -------> idle chatter mumble (no sound, discarded if a bubble is showing)
-```
+ClaudePet runs an HTTP server on `127.0.0.1:23987`. Two Claude Code hooks feed it events: a Stop hook sends notifications when work finishes, and a PreToolUse hook intercepts tool calls that need authorization. The authorization bubble holds the HTTP connection until you click approve or deny, so Claude Code pauses in the meantime.
 
 "Always approve" remembers the tool name for the rest of the session. The memory clears when ClaudePet exits.
+
+For the full HTTP API, animation state machine, and hook integration details, see [CLAUDE.md](CLAUDE.md).
 
 ## Quick start
 
@@ -54,43 +39,13 @@ For step-by-step instructions or manual configuration, see [SETUP.md](SETUP.md).
 
 ## Personas
 
-ClaudePet ships with a built-in butler persona. You can create additional characters with custom dialogue, pixel sprites, and sound effects.
+ClaudePet ships with a built-in default persona. You can create additional characters with custom dialogue, pixel sprites, and sound effects.
 
 The fastest way: run `/create-persona` inside Claude Code. It walks you through character design and generates everything.
 
 You can also build a persona by hand. Drop a `persona.json` plus optional sprites and sounds into `Personas/<your-id>/`. See [CLAUDE.md](CLAUDE.md) for the full persona architecture.
 
 Switch between installed personas from the status bar menu.
-
-## Project structure
-
-```
-Sources/ClaudePet/
-  main.swift              # app entry, persona loading, startup greeting
-  PetWindow.swift         # transparent borderless window, position persistence
-  PetView.swift           # character rendering, animation state machine, bubble management
-  SpeechBubble.swift      # notification bubble + authorization bubble
-  SoundPlayer.swift       # per-persona sound loading with fallback
-  PetServer.swift         # HTTP server (NWListener + CFHTTPMessage)
-  DialogueBank.swift      # Persona protocol, ButlerPersona fallback, DialogueBank facade
-  PersonaLoader.swift     # JSON model, DataDrivenPersona, AuthorizeFormatter, PersonaDirectory
-  StatusBarMenu.swift     # status bar menu + persona switching submenu
-  TerminalActivator.swift # click-to-switch-back-to-terminal (iTerm2 / Terminal.app)
-  Resources/butler/       # built-in butler persona sprites + persona.json + sounds
-
-hooks/
-  notify-stop.sh          # Claude Code Stop hook
-  notify-permission.sh    # Claude Code PreToolUse hook
-
-scripts/
-  setup.sh                # one-command environment setup
-  launch-pet.sh           # singleton launcher (skips if already running)
-  generate_sprites.py     # sprite generation template (Pillow)
-
-Personas/                 # persona directory (scanned at startup, git-ignored)
-```
-
-For architecture details, HTTP API reference, and the animation state machine diagram, see [CLAUDE.md](CLAUDE.md).
 
 ## License
 

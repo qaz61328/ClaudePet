@@ -68,8 +68,8 @@ protocol Persona {
 
 // MARK: - Default Fallback Persona (safety net when JSON loading fails)
 
-struct ButlerPersona: Persona {
-    let id = "butler"
+struct DefaultPersona: Persona {
+    let id = "default"
     let displayName = "ClaudePet"
 
     func greeting(period: TimePeriod) -> String {
@@ -119,25 +119,25 @@ enum DialogueBank {
     private static let fallbackID = PersonaDirectory.builtInPersonaID
 
     /// All available personas (discovered from directory on startup + built-in fallback)
-    private(set) static var allPersonas: [Persona] = [ButlerPersona()]
+    private(set) static var allPersonas: [Persona] = [DefaultPersona()]
 
     /// Currently active persona (persisted via UserDefaults)
     static var current: Persona = {
         let savedID = UserDefaults.standard.string(forKey: selectedPersonaKey) ?? fallbackID
-        return allPersonas.first { $0.id == savedID } ?? ButlerPersona()
+        return allPersonas.first { $0.id == savedID } ?? DefaultPersona()
     }()
 
     static func reloadPersonas() {
         var discovered: [Persona] = PersonaDirectory.discoverAll()
 
         if !discovered.contains(where: { $0.id == fallbackID }) {
-            discovered.insert(ButlerPersona(), at: 0)
+            discovered.insert(DefaultPersona(), at: 0)
         }
 
         allPersonas = discovered
 
         if !allPersonas.contains(where: { $0.id == current.id }) {
-            current = allPersonas.first { $0.id == fallbackID } ?? ButlerPersona()
+            current = allPersonas.first { $0.id == fallbackID } ?? DefaultPersona()
             UserDefaults.standard.set(current.id, forKey: selectedPersonaKey)
         } else if let updated = allPersonas.first(where: { $0.id == current.id }) {
             current = updated

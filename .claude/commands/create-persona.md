@@ -38,7 +38,7 @@ Based on the collected persona information, generate a complete `persona.json`.
 - fileToolLabels actionLabel text should match the persona's voice
 
 Refer to [references/persona-schema.md] for complete field documentation.
-Refer to `Sources/ClaudePet/Resources/butler/persona.json` in the project as a dialogue example.
+Refer to `Sources/ClaudePet/Resources/default/persona.json` in the project as a dialogue example.
 
 ### Step 3: Generate Sprite Script
 
@@ -94,7 +94,7 @@ If you decide to skip, do nothing — no output needed.
 - Examples are directional references only — the AI generates lines in real time, not by picking from the examples
 - Modes must not contradict each other stylistically (all modes for one persona should maintain consistent character)
 
-Refer to `Personas/butler/chatter-prompt.md` as a complete format example.
+Refer to `Personas/default/chatter-prompt.md` as a complete format example.
 
 ### Step 5: Write Files
 

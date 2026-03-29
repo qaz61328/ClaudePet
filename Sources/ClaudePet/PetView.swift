@@ -42,6 +42,12 @@ class PetView: NSView {
     private let bubbleGap: CGFloat = 4
     private let speechBubbleWidth: CGFloat = 280
     private let authBubbleWidth: CGFloat = 300
+    private let bubbleShadowMargin: CGFloat = 20
+
+    // MARK: - State
+
+    /// Original window width before auth bubble expansion
+    private var savedWindowWidth: CGFloat?
 
     // MARK: - Init
 
@@ -82,7 +88,7 @@ class PetView: NSView {
            !personaSprites.isEmpty {
             sprites = personaSprites
         } else {
-            // Bundle fallback (built-in butler sprites)
+            // Bundle fallback (built-in default sprites)
             let bundleSprites = PersonaDirectory.loadBundleSprites()
             if !bundleSprites.isEmpty {
                 sprites = bundleSprites
@@ -433,7 +439,19 @@ class PetView: NSView {
         dismissSpeechBubble(animated: false)
         removeStale(AuthBubbleView.self)
         let bubble = AuthBubbleView(text: text, onDecision: onDecision)
-        positionBubble(bubble, width: authBubbleWidth)
+        let width = bubble.fittingWidth(maxWidth: authBubbleWidth)
+
+        let neededWidth = width + bubbleShadowMargin * 2
+        if let win = window, neededWidth > win.frame.width {
+            savedWindowWidth = win.frame.width
+            let delta = neededWidth - win.frame.width
+            var newFrame = win.frame
+            newFrame.origin.x -= delta / 2
+            newFrame.size.width += delta
+            win.setFrame(newFrame, display: false)
+        }
+
+        positionBubble(bubble, width: width)
         addSubview(bubble)
         authBubble = bubble
         fadeIn(bubble)
@@ -443,6 +461,14 @@ class PetView: NSView {
 
     private func dismissAuthBubble(animated: Bool = true) {
         dismissBubble(&authBubble, animated: animated)
+        if let original = savedWindowWidth, let win = window {
+            let delta = win.frame.width - original
+            var newFrame = win.frame
+            newFrame.origin.x += delta / 2
+            newFrame.size.width = original
+            win.setFrame(newFrame, display: false)
+            savedWindowWidth = nil
+        }
     }
 
     // MARK: - Bubble Helpers

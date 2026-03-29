@@ -9,7 +9,7 @@ let package = Package(
         .executableTarget(
             name: "ClaudePet",
             resources: [
-                .copy("Resources/butler"),
+                .copy("Resources/default"),
                 .copy("Resources/statusbar_icon.png"),
                 .copy("Resources/statusbar_icon@2x.png"),
             ]
