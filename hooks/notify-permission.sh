@@ -43,22 +43,57 @@ fi
 COMMAND=""
 DESCRIPTION=""
 FILE_PATH=""
+TOOL_ARG=""
 
 case "$TOOL" in
   Bash)
     COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null)
     DESCRIPTION=$(echo "$INPUT" | jq -r '.tool_input.description // ""' 2>/dev/null)
+    TOOL_ARG="$COMMAND"
     if [ ${#COMMAND} -gt 500 ]; then
       COMMAND="${COMMAND:0:497}..."
     fi
     ;;
-  Edit|Write)
+  Read|Edit|Write)
     FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // ""' 2>/dev/null)
+    TOOL_ARG="$FILE_PATH"
     ;;
   NotebookEdit)
     FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.notebook_path // ""' 2>/dev/null)
+    TOOL_ARG="$FILE_PATH"
     ;;
 esac
+
+# Auto-allowed by Claude Code permissions.allow → pass through silently (no bubble)
+is_auto_allowed() {
+  local tool="$1"
+  local arg="$2"
+  for settings in "$HOME/.claude/settings.json" "$CWD/.claude/settings.json" "$CWD/.claude/settings.local.json"; do
+    [ -f "$settings" ] || continue
+    while IFS= read -r pattern; do
+      [ -z "$pattern" ] && continue
+      if [ "$pattern" = "$tool" ]; then return 0; fi
+      if [[ "$pattern" == "$tool("*")" ]]; then
+        local glob="${pattern#${tool}(}"
+        glob="${glob%)}"
+        if [[ -n "$arg" && "$arg" == $glob ]]; then return 0; fi
+      fi
+    done < <(jq -r '.permissions.allow[]? // empty' "$settings" 2>/dev/null)
+  done
+  return 1
+}
+
+if is_auto_allowed "$TOOL" "$TOOL_ARG"; then
+  exit 0
+fi
+
+# Passthrough auth mode → notify pet and let Claude Code handle authorization natively
+if [ -f /tmp/claudepet-passthrough-auth ]; then
+  curl -s -m 3 -X POST http://127.0.0.1:23987/notify \
+    -H "Content-Type: application/json" \
+    -d "{\"type\":\"terminalAuth\",\"project\":\"${PROJECT}\"}" >/dev/null 2>&1
+  exit 0
+fi
 
 # Build authorize JSON payload (using jq for safe assembly, prevents injection)
 PAYLOAD=$(jq -n \

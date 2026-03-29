@@ -60,8 +60,8 @@ working --(/working active=false, no other sessions)--> idle
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/health` | Health check. Returns `{"status":"ok","version":"<ver>","persona":"<id>","activeSessions":<n>,"chatterEnabled":<bool>}` |
-| POST | `/notify` | Notification (work complete, needs attention, etc.). Returns 200 immediately. Supports `type` field (`"ask"` = needs user decision, `"plan"` = Plan Mode plan ready) |
+| GET | `/health` | Health check. Returns `{"status":"ok","version":"<ver>","persona":"<id>","activeSessions":<n>,"chatterEnabled":<bool>,"terminalAuthMode":<bool>}` |
+| POST | `/notify` | Notification (work complete, needs attention, etc.). Returns 200 immediately. Supports `type` field (`"ask"` = needs user decision, `"plan"` = Plan Mode plan ready, `"terminalAuth"` = terminal auth mode notification) |
 | POST | `/authorize` | Authorization request. Holds the connection until the user clicks a button. 60-second timeout. |
 | POST | `/chatter` | Idle chatter (no sound). Returns 200 immediately. Body: `{"message":"mumble text"}`. Silently discarded if an auth/notify bubble is showing. |
 | POST | `/working` | Session work state tracking. Returns 200 immediately. Body: `{"session":"<uuid>","active":true/false}`. Multi-session reference counting, 3-minute auto-expiry. |
@@ -79,7 +79,12 @@ ClaudePet integrates with Claude Code's [hook system](https://docs.anthropic.com
 1. Fire-and-forget POST `/working` (active=true) to mark the session as active
 2. `AskUserQuestion`: POST `/notify` (type=ask) for a non-blocking notification bubble
 3. `ExitPlanMode`: POST `/notify` (type=plan) for a non-blocking notification bubble
-4. Other tools (Bash/Edit/Write/NotebookEdit): check session-allow list first, then POST `/authorize` for an authorization bubble (approve / always approve / deny)
+4. Check session-allow list (tools already "always allowed" pass through)
+5. Extract tool fields (command, file_path, etc.)
+6. Check `permissions.allow` from Claude Code settings — if the tool invocation matches an auto-allow pattern, exit 0 silently (no bubble, no notification). Reads global (`~/.claude/settings.json`), project (`$CWD/.claude/settings.json`), and local (`$CWD/.claude/settings.local.json`) settings. Supports exact tool names (`Edit`) and glob patterns (`Bash(npm test*)`)
+7. Check authorization mode:
+   - **Passthrough auth mode**: POST `/notify` (type=terminalAuth), exit 0 — Claude Code shows native dialog with diffs
+   - **Pet auth mode** (default): POST `/authorize` for an authorization bubble (approve / always approve / deny)
 
 Hook output uses the `hookSpecificOutput` structure:
 ```json
@@ -92,6 +97,14 @@ Hook output uses the `hookSpecificOutput` structure:
 - "Always approve" writes the tool name to `/tmp/claudepet-session-allow`
 - The hook script checks this file first. Tools already approved skip the authorization bubble.
 - ClaudePet clears this file on exit.
+
+### Authorization Mode Toggle
+
+Two modes, switchable via Status bar menu "Passthrough Auth" toggle:
+- **Pet 授權模式** (default): Hook calls `/authorize`, pet shows interactive auth bubble with Allow/Always Allow/Deny buttons
+- **Passthrough Auth**: Hook calls `/notify` (type=terminalAuth), pet shows notification with authorize sound, Claude Code shows native permission dialog with diffs
+
+Persisted in UserDefaults (key: `terminalAuthMode`). Exposed via `/health` endpoint as `terminalAuthMode` field. Synced to file flag `/tmp/claudepet-passthrough-auth` (created when on, removed when off). The hook script checks this file (zero network overhead) instead of querying `/health`.
 
 ### Idle Chatter
 
