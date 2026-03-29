@@ -1,6 +1,6 @@
 # ClaudePet
 
-![Version](https://img.shields.io/badge/version-v0.1.2-blue)
+![Version](https://img.shields.io/badge/version-v0.1.3-blue)
 
 A macOS desktop pet that replaces Claude Code's terminal permission prompts with an interactive pixel-art character.
 
@@ -69,6 +69,10 @@ The fastest way: run `/create-persona` inside Claude Code. It walks you through 
 You can also build a persona by hand. Drop a `persona.json` plus optional sprites and sounds into `Personas/<your-id>/`. See [CLAUDE.md](CLAUDE.md) for the full persona architecture.
 
 Switch between installed personas from the status bar menu.
+
+## FAQ
+
+See [FAQ.md](FAQ.md) | [繁體中文](FAQ_zh-TW.md)
 
 ## Contributing
 
