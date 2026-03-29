@@ -54,6 +54,10 @@ Yes. Each persona can have its own sound effects. Place sound files in the perso
 
 This is a known issue. Dream mode runs tool calls in the background, which triggers the PreToolUse hook the same way normal operations do. There is no workaround yet.
 
+### Auto Edit Mode still triggers authorization bubbles or notifications
+
+This is a known issue. When Claude Code runs in Auto Edit Mode, it skips its own permission prompts but still fires PreToolUse hooks. The hook cannot distinguish between normal mode and Auto Edit Mode, so ClaudePet shows authorization bubbles (or notification bubbles in Passthrough Auth mode) as usual. There is no workaround yet.
+
 ### Grep and Glob tools don't go through ClaudePet authorization
 
 This is a known issue. The PreToolUse hook only intercepts destructive or interactive tools (Bash, Edit, Write, etc.). Grep and Glob are read-only search tools, so their authorization falls back to Claude Code's built-in terminal UI instead of ClaudePet's bubble.

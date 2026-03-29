@@ -54,6 +54,10 @@
 
 這是已知問題。Dream 模式在背景執行工具呼叫時，會跟一般操作一樣觸發 PreToolUse hook，目前尚無解決方法。
 
+### Auto Edit Mode 仍然會跳出授權或通知氣泡
+
+這是已知問題。Claude Code 在 Auto Edit Mode 下雖然會跳過自己的授權提示，但 PreToolUse hook 照樣觸發。Hook 無法區分一般模式和 Auto Edit Mode，所以 ClaudePet 會照常顯示授權氣泡（或 Passthrough Auth 模式下的通知氣泡）。目前尚無解決方法。
+
 ### Grep 和 Glob 工具不會走 ClaudePet 授權
 
 這是已知問題。PreToolUse hook 只攔截具破壞性或互動性的工具（Bash、Edit、Write 等）。Grep 和 Glob 是唯讀搜尋工具，授權會回退到 Claude Code 終端機內建 UI，不經過 ClaudePet 的授權泡泡。
