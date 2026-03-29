@@ -2,7 +2,8 @@ import AppKit
 
 // MARK: - Terminal Activator
 
-/// Detects and activates the user's terminal, preferring the tab running Claude Code.
+/// Detects and activates the user's terminal, automatically tracking which terminal is in use.
+/// Supports iTerm2, Terminal.app, Warp, Ghostty, Kitty, Alacritty, and WezTerm.
 /// PetServer calls trackProject(_:) on each request to track the active project.
 /// PetView.mouseDown calls activate() to switch.
 @MainActor
@@ -13,11 +14,22 @@ enum TerminalActivator {
     /// Bundle ID of the frontmost app before click (tracked via NSWorkspace notifications)
     private static var previousFrontmostBundleID: String?
 
-    /// Supported terminal Bundle IDs (in priority order)
-    private static let terminalBundleIDs = [
-        "com.googlecode.iterm2",
-        "com.apple.Terminal",
-        "dev.warp.Warp-Stable",
+    /// Bundle ID of the most recently active terminal (auto-detected)
+    private static var lastActiveTerminalBundleID: String?
+
+    // Bundle IDs referenced in AppleScript tab switching
+    private static let iterm2BundleID    = "com.googlecode.iterm2"
+    private static let terminalBundleID  = "com.apple.Terminal"
+
+    /// Supported terminal Bundle IDs
+    private static let knownTerminalBundleIDs: Set<String> = [
+        iterm2BundleID,                 // iTerm2
+        terminalBundleID,               // Terminal.app
+        "dev.warp.Warp-Stable",         // Warp
+        "com.mitchellh.ghostty",        // Ghostty
+        "net.kovidgoyal.kitty",         // Kitty
+        "org.alacritty",                // Alacritty
+        "com.github.wez.wezterm",       // WezTerm
     ]
 
     /// Track the most recently active project (called by PetServer on each request)
@@ -39,7 +51,12 @@ enum TerminalActivator {
             // Only track non-self app switches
             if app.processIdentifier != myPID {
                 Task { @MainActor in
-                    previousFrontmostBundleID = app.bundleIdentifier
+                    let bundleID = app.bundleIdentifier
+                    previousFrontmostBundleID = bundleID
+                    // Auto-detect the user's terminal
+                    if let id = bundleID, knownTerminalBundleIDs.contains(id) {
+                        lastActiveTerminalBundleID = id
+                    }
                 }
             }
         }
@@ -51,7 +68,7 @@ enum TerminalActivator {
     static func activate() -> Bool {
         let running = NSWorkspace.shared.runningApplications
 
-        // Find a running terminal
+        // Find a running terminal (prefer the auto-detected one)
         guard let (app, bundleID) = findRunningTerminal(in: running) else {
             return false
         }
@@ -74,13 +91,18 @@ enum TerminalActivator {
 
     // MARK: - Private Helpers
 
+    /// Find a running terminal: prefer the last active terminal, fall back to any known terminal (single pass)
     private static func findRunningTerminal(in apps: [NSRunningApplication]) -> (NSRunningApplication, String)? {
-        for bundleID in terminalBundleIDs {
-            if let app = apps.first(where: { $0.bundleIdentifier == bundleID }) {
-                return (app, bundleID)
+        let preferredID = lastActiveTerminalBundleID
+        var fallback: (NSRunningApplication, String)?
+        for app in apps {
+            guard let id = app.bundleIdentifier else { continue }
+            if id == preferredID { return (app, id) }
+            if fallback == nil, knownTerminalBundleIDs.contains(id) {
+                fallback = (app, id)
             }
         }
-        return nil
+        return fallback
     }
 
     /// Escape string for AppleScript (prevent injection from project names containing quotes)
@@ -104,9 +126,9 @@ enum TerminalActivator {
     private static func switchToClaudeTab(bundleID: String, project: String?) {
         let script: String
         switch bundleID {
-        case "com.googlecode.iterm2":
+        case iterm2BundleID:
             script = iTerm2Script(project: project)
-        case "com.apple.Terminal":
+        case terminalBundleID:
             script = terminalAppScript(project: project)
         default:
             return

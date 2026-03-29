@@ -22,7 +22,7 @@ SoundPlayer.swift       # Sound playback (NSSound) + per-persona sound loading +
 PetServer.swift         # HTTP Server (NWListener + CFHTTPMessage)
 DialogueBank.swift      # Persona protocol + DefaultPersona (fallback) + DialogueBank facade
 PersonaLoader.swift     # PersonaData (JSON model) + DataDrivenPersona + AuthorizeFormatter + PersonaDirectory
-TerminalActivator.swift # Click-to-switch-to-terminal (detects iTerm2/Terminal.app + AppleScript tab switching)
+TerminalActivator.swift # Click-to-switch-to-terminal (auto-detects user's terminal, supports 7 terminals + AppleScript tab switching)
 StatusBarMenu.swift     # Status bar menu + persona switching submenu
 Resources/              # Built-in pixel sprites PNG + persona.json (default/ subdirectory)
 ```
