@@ -49,6 +49,10 @@ You can also build a persona by hand. Drop a `persona.json` plus optional sprite
 
 Switch between installed personas from the status bar menu.
 
+## Contributing
+
+This project is built by me and Claude Code together. If you run into any issues, feel free to modify the code yourself or submit a PR.
+
 ## License
 
 [MIT](LICENSE)
