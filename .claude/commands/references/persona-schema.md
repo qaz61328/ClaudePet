@@ -60,6 +60,11 @@ Personas/
       "Edit":         { "pathIcon": "pencil-emoji", "actionLabel": "action-description" },
       "Write":        { "pathIcon": "pencil-emoji", "actionLabel": "action-description" },
       "NotebookEdit": { "pathIcon": "notebook-emoji", "actionLabel": "action-description" }
+    },
+    "buttonLabels": {
+      "approve": "✓ Allow button text",
+      "approveSession": "✓ Always Allow button text",
+      "deny": "✗ Deny button text"
     }
   },
 
@@ -97,6 +102,7 @@ Personas/
 | greeting | App launch or menu "Say something" | Greet, show concern for the user |
 | taskComplete | Claude Code finishes work | Report completion, invite review |
 | authorize.openers | Authorization needed to run a tool | Request permission |
+| authorize.buttonLabels | Allow / Always Allow / Deny buttons | Static labels (not arrays). Include ✓/✗ prefix. Optional; defaults to English if omitted |
 | authorized | User grants permission | Thank, confirm execution |
 | denied | User denies permission | Accept gracefully, no pressure |
 | clicked | User clicks the persona | Interactive, playful, everyday feel |

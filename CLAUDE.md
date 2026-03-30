@@ -133,7 +133,7 @@ The persona system uses a dual architecture: JSON data-driven with Swift fallbac
 - JSON schema defined in `.claude/commands/references/persona-schema.md`
 
 **Code layer (Swift):**
-- `Persona` protocol: defines 9 dialogue methods
+- `Persona` protocol: defines 9 dialogue methods + `authButtonLabels` computed property
 - `DataDrivenPersona`: loads from JSON, implements the Persona protocol
 - `DefaultPersona`: hardcoded default character (fallback if JSON is corrupted)
 - `AuthorizeFormatter`: shared assembly logic for authorization text (simplifyCommand, etc.)

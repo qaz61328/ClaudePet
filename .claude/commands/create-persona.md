@@ -36,6 +36,7 @@ Based on the collected persona information, generate a complete `persona.json`.
 - authorized/denied lines should be short and punchy
 - lateNight lines should convey concern for the user's health
 - fileToolLabels actionLabel text should match the persona's voice
+- buttonLabels (approve/approveSession/deny) should be short, decisive, and match the persona's voice. Include ✓/✗ prefix
 
 Refer to [references/persona-schema.md] for complete field documentation.
 Refer to `Sources/ClaudePet/Resources/default/persona.json` in the project as a dialogue example.

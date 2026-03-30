@@ -292,14 +292,14 @@ class AuthBubbleView: NSView, BubbleSizable {
     /// Minimum width needed to fit all three buttons in a row
     private let minimumWidth: CGFloat
 
-    init(text: String, onDecision: @escaping (AuthDecision) -> Void) {
+    init(text: String, buttonLabels: AuthButtonLabels, onDecision: @escaping (AuthDecision) -> Void) {
         self.onDecision = onDecision
 
         label = makeBubbleLabel(text: text, maxLines: 8)
 
-        approveButton = makePillButton(title: "✓ Allow", color: .systemGreen)
-        approveSessionButton = makePillButton(title: "✓ Always Allow", color: .systemBlue)
-        denyButton = makePillButton(title: "✗ Deny", color: .systemRed)
+        approveButton = makePillButton(title: buttonLabels.approve, color: .systemGreen)
+        approveSessionButton = makePillButton(title: buttonLabels.approveSession, color: .systemBlue)
+        denyButton = makePillButton(title: buttonLabels.deny, color: .systemRed)
 
         let w1 = Self.fittingButtonWidth(for: approveButton)
         let w2 = Self.fittingButtonWidth(for: approveSessionButton)

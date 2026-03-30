@@ -68,6 +68,11 @@
       "Edit": { "pathIcon": "\ud83d\udcc4", "actionLabel": "\u270f\ufe0f Edit File" },
       "Write": { "pathIcon": "\ud83d\udcc4", "actionLabel": "\ud83d\udcdd Write File" },
       "NotebookEdit": { "pathIcon": "\ud83d\udcd3", "actionLabel": "\u270f\ufe0f Edit Notebook" }
+    },
+    "buttonLabels": {
+      "approve": "\u2713 Allow",
+      "approveSession": "\u2713 Always Allow",
+      "deny": "\u2717 Deny"
     }
   },
   "authorized": [

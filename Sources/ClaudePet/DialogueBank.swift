@@ -58,6 +58,7 @@ protocol Persona {
     func greeting(period: TimePeriod) -> String
     func taskComplete(project: String?) -> String
     func authorizeRequest(payload: AuthorizePayload) -> String
+    var authButtonLabels: AuthButtonLabels { get }
     func authorized() -> String
     func denied() -> String
     func clicked() -> String
@@ -91,6 +92,7 @@ struct DefaultPersona: Persona {
         AuthorizeFormatter.format(payload: payload, openers: ["Authorization needed"], fileToolLabels: nil)
     }
 
+    var authButtonLabels: AuthButtonLabels { .defaults }
     func authorized() -> String { "Got it, executing now" }
     func denied() -> String { "Understood, cancelled" }
     func clicked() -> String { "Hi!" }
@@ -170,6 +172,10 @@ enum DialogueBank {
 
     static func authorizeRequest(payload: AuthorizePayload) -> String {
         current.authorizeRequest(payload: payload)
+    }
+
+    static var authButtonLabels: AuthButtonLabels {
+        current.authButtonLabels
     }
 
     static func authorized() -> String {

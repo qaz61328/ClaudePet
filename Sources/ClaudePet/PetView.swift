@@ -30,7 +30,7 @@ class PetView: NSView {
     private var personaObserver: Any?
 
     /// Cached auth content and callback after bubble dismissal (re-shown when character is clicked)
-    private var pendingAuth: (text: String, onDecision: (AuthDecision) -> Void)?
+    private var pendingAuth: (text: String, buttonLabels: AuthButtonLabels, onDecision: (AuthDecision) -> Void)?
 
     /// Whether any session is actively working (controlled by PetServer via startWorking/stopWorking)
     private(set) var isWorking = false
@@ -272,7 +272,7 @@ class PetView: NSView {
 
         // Auth bubble dismissed but request still pending — click character to re-show
         if animationState == .alert, authBubble == nil, let pending = pendingAuth {
-            showAuthBubble(text: pending.text, onDecision: pending.onDecision)
+            showAuthBubble(text: pending.text, buttonLabels: pending.buttonLabels, onDecision: pending.onDecision)
             scheduleAuthBubbleDismiss()
             return
         }
@@ -411,6 +411,7 @@ class PetView: NSView {
 
     func showAuthorization(payload: AuthorizePayload, completion: @escaping (AuthDecision) -> Void) {
         let text = DialogueBank.authorizeRequest(payload: payload)
+        let buttonLabels = DialogueBank.authButtonLabels
         transitionTo(.alert)
 
         let onDecision: (AuthDecision) -> Void = { [weak self] decision in
@@ -429,8 +430,8 @@ class PetView: NSView {
             completion(decision)
         }
 
-        pendingAuth = (text: text, onDecision: onDecision)
-        showAuthBubble(text: text, onDecision: onDecision)
+        pendingAuth = (text: text, buttonLabels: buttonLabels, onDecision: onDecision)
+        showAuthBubble(text: text, buttonLabels: buttonLabels, onDecision: onDecision)
 
         // Dismiss bubble after 60s but keep alert state (request preserved, click character to re-show)
         scheduleAuthBubbleDismiss()
@@ -474,11 +475,11 @@ class PetView: NSView {
 
     // MARK: - Auth Bubble
 
-    private func showAuthBubble(text: String, onDecision: @escaping (AuthDecision) -> Void) {
+    private func showAuthBubble(text: String, buttonLabels: AuthButtonLabels, onDecision: @escaping (AuthDecision) -> Void) {
         dismissAuthBubble(animated: false)
         dismissSpeechBubble(animated: false)
         removeStale(AuthBubbleView.self)
-        let bubble = AuthBubbleView(text: text, onDecision: onDecision)
+        let bubble = AuthBubbleView(text: text, buttonLabels: buttonLabels, onDecision: onDecision)
         let width = bubble.fittingWidth(maxWidth: authBubbleWidth)
 
         let neededWidth = width + bubbleShadowMargin * 2

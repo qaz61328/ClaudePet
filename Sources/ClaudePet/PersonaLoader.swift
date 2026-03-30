@@ -98,10 +98,23 @@ struct FileToolLabel: Codable {
     let actionLabel: String
 }
 
+struct AuthButtonLabels: Codable {
+    let approve: String
+    let approveSession: String
+    let deny: String
+
+    static let defaults = AuthButtonLabels(
+        approve: "✓ Allow",
+        approveSession: "✓ Always Allow",
+        deny: "✗ Deny"
+    )
+}
+
 /// JSON structure for the authorize section
 struct AuthorizeData: Codable {
     let openers: [String]
     let fileToolLabels: [String: FileToolLabel]?
+    let buttonLabels: AuthButtonLabels?
 }
 
 /// Dialogue section with generic and withProject variants
@@ -186,6 +199,10 @@ struct DataDrivenPersona: Persona {
             openers: data.authorize.openers,
             fileToolLabels: data.authorize.fileToolLabels
         )
+    }
+
+    var authButtonLabels: AuthButtonLabels {
+        data.authorize.buttonLabels ?? .defaults
     }
 
     func authorized() -> String {
