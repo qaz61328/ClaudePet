@@ -8,7 +8,7 @@
 
 ### 需要授權的時候，看不到詳細要授權什麼
 
-在狀態列選單勾選「Passthrough Auth」。開啟後 ClaudePet 只會通知您需要授權，不再攔截授權內容。實際的核准操作會回到 Claude Code 終端機內建的對話框，可以看到完整的 diff 和指令細節。
+在狀態列選單勾選「Authorize in Terminal」。開啟後 ClaudePet 只會通知您需要授權，不再攔截授權內容。實際的核准操作會回到 Claude Code 終端機內建的對話框，可以看到完整的 diff 和指令細節。
 
 ## 閒聊
 
@@ -56,7 +56,7 @@
 
 ### Auto Edit Mode 仍然會跳出授權或通知氣泡
 
-這是已知問題。Claude Code 在 Auto Edit Mode 下雖然會跳過自己的授權提示，但 PreToolUse hook 照樣觸發。Hook 無法區分一般模式和 Auto Edit Mode，所以 ClaudePet 會照常顯示授權氣泡（或 Passthrough Auth 模式下的通知氣泡）。目前尚無解決方法。
+這是已知問題。Claude Code 在 Auto Edit Mode 下雖然會跳過自己的授權提示，但 PreToolUse hook 照樣觸發。Hook 無法區分一般模式和 Auto Edit Mode，所以 ClaudePet 會照常顯示授權氣泡（或「Authorize in Terminal」模式下的通知氣泡）。目前尚無解決方法。
 
 ### Grep 和 Glob 工具不會走 ClaudePet 授權
 

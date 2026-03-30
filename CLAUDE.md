@@ -83,7 +83,7 @@ ClaudePet integrates with Claude Code's [hook system](https://docs.anthropic.com
 5. Extract tool fields (command, file_path, etc.)
 6. Check `permissions.allow` from Claude Code settings — if the tool invocation matches an auto-allow pattern, exit 0 silently (no bubble, no notification). Reads global (`~/.claude/settings.json`), project (`$CWD/.claude/settings.json`), and local (`$CWD/.claude/settings.local.json`) settings. Supports exact tool names (`Edit`) and glob patterns (`Bash(npm test*)`)
 7. Check authorization mode:
-   - **Passthrough auth mode**: POST `/notify` (type=terminalAuth), exit 0 — Claude Code shows native dialog with diffs
+   - **Authorize in Terminal** mode: POST `/notify` (type=terminalAuth), exit 0 — Claude Code shows native dialog with diffs
    - **Pet auth mode** (default): POST `/authorize` for an authorization bubble (approve / always approve / deny)
 
 Hook output uses the `hookSpecificOutput` structure:
@@ -100,9 +100,9 @@ Hook output uses the `hookSpecificOutput` structure:
 
 ### Authorization Mode Toggle
 
-Two modes, switchable via Status bar menu "Passthrough Auth" toggle:
+Two modes, switchable via Status bar menu "Authorize in Terminal" toggle:
 - **Pet 授權模式** (default): Hook calls `/authorize`, pet shows interactive auth bubble with Allow/Always Allow/Deny buttons
-- **Passthrough Auth**: Hook calls `/notify` (type=terminalAuth), pet shows notification with authorize sound, Claude Code shows native permission dialog with diffs
+- **Authorize in Terminal**: Hook calls `/notify` (type=terminalAuth), pet shows notification with authorize sound, Claude Code shows native permission dialog with diffs
 
 Persisted in UserDefaults (key: `terminalAuthMode`). Exposed via `/health` endpoint as `terminalAuthMode` field. Synced to file flag `/tmp/claudepet-passthrough-auth` (created when on, removed when off). The hook script checks this file (zero network overhead) instead of querying `/health`.
 

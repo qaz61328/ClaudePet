@@ -61,7 +61,7 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
         menu.addItem(showHideItem)
         menu.addItem(sayHelloItem)
         menu.addItem(muteItem)
-        let authModeItem = NSMenuItem(title: "Passthrough Auth", action: #selector(toggleAuthMode), keyEquivalent: "")
+        let authModeItem = NSMenuItem(title: "Authorize in Terminal", action: #selector(toggleAuthMode), keyEquivalent: "")
         authModeItem.target = self
         authModeItem.tag = Self.authModeItemTag
 

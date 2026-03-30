@@ -87,7 +87,7 @@ if is_auto_allowed "$TOOL" "$TOOL_ARG"; then
   exit 0
 fi
 
-# Passthrough auth mode → notify pet and let Claude Code handle authorization natively
+# "Authorize in Terminal" mode → notify pet and let Claude Code handle authorization natively
 if [ -f /tmp/claudepet-passthrough-auth ]; then
   curl -s -m 3 -X POST http://127.0.0.1:23987/notify \
     -H "Content-Type: application/json" \

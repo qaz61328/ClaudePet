@@ -8,7 +8,7 @@ Remove the `PreToolUse` hook from `~/.claude/settings.json`. ClaudePet will stil
 
 ### I can't see the details of what's being authorized
 
-Enable "Passthrough Auth" from the status bar menu. In this mode, ClaudePet only sends a notification that authorization is needed, without intercepting the authorization content. The actual approval happens in Claude Code's native terminal dialog, which shows full diffs and command details.
+Enable "Authorize in Terminal" from the status bar menu. In this mode, ClaudePet only sends a notification that authorization is needed, without intercepting the authorization content. The actual approval happens in Claude Code's native terminal dialog, which shows full diffs and command details.
 
 ## Idle Chatter
 
@@ -56,7 +56,7 @@ This is a known issue. Dream mode runs tool calls in the background, which trigg
 
 ### Auto Edit Mode still triggers authorization bubbles or notifications
 
-This is a known issue. When Claude Code runs in Auto Edit Mode, it skips its own permission prompts but still fires PreToolUse hooks. The hook cannot distinguish between normal mode and Auto Edit Mode, so ClaudePet shows authorization bubbles (or notification bubbles in Passthrough Auth mode) as usual. There is no workaround yet.
+This is a known issue. When Claude Code runs in Auto Edit Mode, it skips its own permission prompts but still fires PreToolUse hooks. The hook cannot distinguish between normal mode and Auto Edit Mode, so ClaudePet shows authorization bubbles (or notification bubbles in "Authorize in Terminal" mode) as usual. There is no workaround yet.
 
 ### Grep and Glob tools don't go through ClaudePet authorization
 
