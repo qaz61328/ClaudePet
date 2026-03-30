@@ -123,7 +123,7 @@ echo
 # Step 5: Clean up temp files
 # ══════════════════════════════════════════════════════
 printf "${BOLD}[5/5] Cleaning up temp files...${NC}\n"
-rm -f /tmp/claudepet-session-allow /tmp/claudepet-chatter-lock
+rm -f /tmp/claudepet-session-allow-* /tmp/claudepet-chatter-lock
 ok "Temp files cleaned"
 echo
 

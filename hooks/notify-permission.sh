@@ -8,7 +8,9 @@ INPUT=$(cat)
 eval "$(echo "$INPUT" | jq -r '@sh "CWD=\(.cwd // "unknown") TOOL=\(.tool_name // "unknown") SESSION_ID=\(.session_id // "")"')"
 PROJECT=$(basename "$CWD")
 
-SESSION_ALLOW="/tmp/claudepet-session-allow"
+# Per-project session-allow file (CWD hash prevents cross-project leaking)
+PROJECT_HASH=$(echo -n "$CWD" | md5 -q)
+SESSION_ALLOW="/tmp/claudepet-session-allow-${PROJECT_HASH}"
 
 # Notify ClaudePet this session is active (non-blocking fire-and-forget)
 if [ -n "$SESSION_ID" ]; then

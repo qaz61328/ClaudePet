@@ -94,9 +94,9 @@ Hook output uses the `hookSpecificOutput` structure:
 
 ### Session Authorization Memory
 
-- "Always approve" writes the tool name to `/tmp/claudepet-session-allow`
-- The hook script checks this file first. Tools already approved skip the authorization bubble.
-- ClaudePet clears this file on exit.
+- "Always approve" writes the tool name to `/tmp/claudepet-session-allow-<hash>` (hash = md5 of CWD, per-project isolation)
+- The hook script checks this file first. Tools already approved in the same project skip the authorization bubble.
+- ClaudePet clears all session-allow files on exit.
 
 ### Authorization Mode Toggle
 

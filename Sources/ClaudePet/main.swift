@@ -56,8 +56,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        // Clean up session authorization memory
-        try? FileManager.default.removeItem(atPath: "/tmp/claudepet-session-allow")
+        // Clean up all per-project session authorization memory files
+        if let tmpContents = try? FileManager.default.contentsOfDirectory(atPath: "/tmp") {
+            for file in tmpContents where file.hasPrefix("claudepet-session-allow-") {
+                try? FileManager.default.removeItem(atPath: "/tmp/\(file)")
+            }
+        }
         try? FileManager.default.removeItem(atPath: PetServer.passthroughAuthFlagPath)
     }
 }
