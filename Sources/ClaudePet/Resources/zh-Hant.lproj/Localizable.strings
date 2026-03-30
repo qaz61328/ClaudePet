@@ -1,0 +1,20 @@
+/* Menu items */
+"Version %@" = "版本 %@";
+"Show/Hide Pet" = "顯示／隱藏小幫手";
+"Say Hello" = "打招呼";
+"Mute" = "靜音";
+"Idle Chatter" = "閒聊功能";
+"Authorize in Terminal" = "在終端機授權";
+"Persona" = "角色";
+"Reload Personas" = "重新載入角色";
+"Check for Updates" = "檢查更新";
+"Quit" = "結束";
+
+/* Feedback messages */
+"Loaded %lld persona(s)" = "已載入 %lld 個角色";
+"Checking for updates..." = "正在檢查更新⋯";
+"Can't detect GitHub repo" = "無法偵測 GitHub Repo";
+"Can't reach GitHub" = "無法連線 GitHub";
+"Already latest (v%@)" = "已是最新版 (v%@)";
+"v%@ → v%@" = "v%@ → v%@";
+"Pull failed (conflicts?)" = "拉取失敗（有衝突？）";

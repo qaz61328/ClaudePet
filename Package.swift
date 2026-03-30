@@ -4,6 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "ClaudePet",
+    defaultLocalization: "en",
     platforms: [.macOS(.v13)],
     targets: [
         .executableTarget(

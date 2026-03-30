@@ -1,5 +1,25 @@
 import AppKit
 
+/// Resolved localized sub-bundle (workaround: SPM resource bundles lack CFBundleLocalizations,
+/// so Bundle.module.preferredLocalizations always falls back to the development region.
+/// We manually match Locale.preferredLanguages against available .lproj directories.)
+private let localizedBundle: Bundle = {
+    let base = Bundle.module
+    let match = Bundle.preferredLocalizations(from: base.localizations,
+                                              forPreferences: Locale.preferredLanguages)
+    if let lang = match.first,
+       let path = base.path(forResource: lang, ofType: "lproj"),
+       let sub = Bundle(path: path) {
+        return sub
+    }
+    return base
+}()
+
+/// Shorthand for localized string lookup
+private func L(_ key: String.LocalizationValue) -> String {
+    String(localized: key, bundle: localizedBundle)
+}
+
 // MARK: - Status Bar Menu
 
 @MainActor
@@ -38,42 +58,42 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
         let menu = NSMenu()
         menu.delegate = self
 
-        let showHideItem = NSMenuItem(title: "Show/Hide Pet", action: #selector(toggleVisibility), keyEquivalent: "")
+        let showHideItem = NSMenuItem(title: L("Show/Hide Pet"), action: #selector(toggleVisibility), keyEquivalent: "")
         showHideItem.target = self
 
-        let sayHelloItem = NSMenuItem(title: "Say Hello", action: #selector(sayHello), keyEquivalent: "")
+        let sayHelloItem = NSMenuItem(title: L("Say Hello"), action: #selector(sayHello), keyEquivalent: "")
         sayHelloItem.target = self
 
-        let quitItem = NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: L("Quit"), action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
 
         menu.addItem(makeDisabledItem(title: "ClaudePet 🎩"))
-        menu.addItem(makeDisabledItem(title: "Version \(PersonaDirectory.appVersion)"))
+        menu.addItem(makeDisabledItem(title: L("Version \(PersonaDirectory.appVersion)")))
         menu.addItem(.separator())
-        let muteItem = NSMenuItem(title: "Mute", action: #selector(toggleMute), keyEquivalent: "")
+        let muteItem = NSMenuItem(title: L("Mute"), action: #selector(toggleMute), keyEquivalent: "")
         muteItem.target = self
         muteItem.tag = Self.muteItemTag
 
-        let chatterItem = NSMenuItem(title: "Idle Chatter", action: #selector(toggleChatter), keyEquivalent: "")
+        let chatterItem = NSMenuItem(title: L("Idle Chatter"), action: #selector(toggleChatter), keyEquivalent: "")
         chatterItem.target = self
         chatterItem.tag = Self.chatterItemTag
 
         menu.addItem(showHideItem)
         menu.addItem(sayHelloItem)
         menu.addItem(muteItem)
-        let authModeItem = NSMenuItem(title: "Authorize in Terminal", action: #selector(toggleAuthMode), keyEquivalent: "")
+        let authModeItem = NSMenuItem(title: L("Authorize in Terminal"), action: #selector(toggleAuthMode), keyEquivalent: "")
         authModeItem.target = self
         authModeItem.tag = Self.authModeItemTag
 
         menu.addItem(chatterItem)
         menu.addItem(authModeItem)
         menu.addItem(.separator())
-        let personaItem = NSMenuItem(title: "Persona", action: nil, keyEquivalent: "")
+        let personaItem = NSMenuItem(title: L("Persona"), action: nil, keyEquivalent: "")
         personaItem.submenu = NSMenu()
         personaItem.tag = Self.personaMenuTag
         menu.addItem(personaItem)
         menu.addItem(.separator())
-        let upgradeItem = NSMenuItem(title: "Check for Updates", action: #selector(upgrade), keyEquivalent: "")
+        let upgradeItem = NSMenuItem(title: L("Check for Updates"), action: #selector(upgrade), keyEquivalent: "")
         upgradeItem.target = self
         menu.addItem(upgradeItem)
         menu.addItem(quitItem)
@@ -122,7 +142,7 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
 
         submenu.addItem(.separator())
 
-        let reloadItem = NSMenuItem(title: "Reload Personas", action: #selector(reloadPersonas), keyEquivalent: "")
+        let reloadItem = NSMenuItem(title: L("Reload Personas"), action: #selector(reloadPersonas), keyEquivalent: "")
         reloadItem.target = self
         submenu.addItem(reloadItem)
     }
@@ -146,7 +166,7 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
     @objc private func reloadPersonas() {
         DialogueBank.reloadPersonas()
         petWindow?.petView.reloadSprites()
-        showBubble("Loaded \(DialogueBank.allPersonas.count) persona(s)")
+        showBubble(L("Loaded \(DialogueBank.allPersonas.count) persona(s)"))
     }
 
     @objc private func toggleMute() {
@@ -213,7 +233,7 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
             return
         }
 
-        showBubble("Checking for updates...")
+        showBubble(L("Checking for updates..."))
 
         let gitDir = projectRoot.path
         let localVersion = PersonaDirectory.appVersion
@@ -221,7 +241,7 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
             // Resolve GitHub repo from git remote
             guard let repo = Self.parseGitHubRepo(in: gitDir) else {
                 DispatchQueue.main.async {
-                    self?.showBubble("Can't detect GitHub repo")
+                    self?.showBubble(L("Can't detect GitHub repo"))
                     self?.isUpgrading = false
                 }
                 return
@@ -235,7 +255,7 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let tagName = json["tag_name"] as? String else {
                 DispatchQueue.main.async {
-                    self?.showBubble("Can't reach GitHub")
+                    self?.showBubble(L("Can't reach GitHub"))
                     self?.isUpgrading = false
                 }
                 return
@@ -246,19 +266,19 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
 
             guard remoteVersion != localVersion else {
                 DispatchQueue.main.async {
-                    self?.showBubble("Already latest (v\(localVersion))")
+                    self?.showBubble(L("Already latest (v\(localVersion))"))
                     self?.isUpgrading = false
                 }
                 return
             }
 
-            DispatchQueue.main.async { self?.showBubble("v\(localVersion) → v\(remoteVersion)") }
+            DispatchQueue.main.async { self?.showBubble(L("v\(localVersion) → v\(remoteVersion)")) }
 
             // Pull latest code
             let pull = Self.runProcess("/usr/bin/git", args: ["-C", gitDir, "pull", "--ff-only", "origin", "main"])
             guard pull.status == 0 else {
                 DispatchQueue.main.async {
-                    self?.showBubble("Pull failed (conflicts?)")
+                    self?.showBubble(L("Pull failed (conflicts?)"))
                     self?.isUpgrading = false
                 }
                 return

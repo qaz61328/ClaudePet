@@ -1,0 +1,20 @@
+/* Menu items */
+"Version %@" = "Version %@";
+"Show/Hide Pet" = "Show/Hide Pet";
+"Say Hello" = "Say Hello";
+"Mute" = "Mute";
+"Idle Chatter" = "Idle Chatter";
+"Authorize in Terminal" = "Authorize in Terminal";
+"Persona" = "Persona";
+"Reload Personas" = "Reload Personas";
+"Check for Updates" = "Check for Updates";
+"Quit" = "Quit";
+
+/* Feedback messages */
+"Loaded %lld persona(s)" = "Loaded %lld persona(s)";
+"Checking for updates..." = "Checking for updates...";
+"Can't detect GitHub repo" = "Can't detect GitHub repo";
+"Can't reach GitHub" = "Can't reach GitHub";
+"Already latest (v%@)" = "Already latest (v%@)";
+"v%@ → v%@" = "v%@ → v%@";
+"Pull failed (conflicts?)" = "Pull failed (conflicts?)";
