@@ -2,62 +2,72 @@
 
 ## Authorization
 
-### How do I disable authorization prompts?
+### How do I turn off permission notifications?
 
-Remove the `PreToolUse` hook from `~/.claude/settings.json`. ClaudePet will still show notifications but will no longer intercept tool authorization.
+Remove the `PreToolUse` hook from `~/.claude/settings.json`. ClaudePet will still show "work complete" notifications but stop intercepting tool authorizations.
 
-### I can't see the details of what's being authorized
+### I can't see what's being authorized
 
-Enable "Authorize in Terminal" from the status bar menu. In this mode, ClaudePet only sends a notification that authorization is needed, without intercepting the authorization content. The actual approval happens in Claude Code's native terminal dialog, which shows full diffs and command details.
+Enable "Authorize in Terminal" in the status bar menu. ClaudePet will notify you that authorization is needed, then hand the approval back to Claude Code's built-in terminal dialog. You get the full diff and command details there.
+
+### "Always allow" doesn't persist across sessions
+
+"Always allow" applies to the current session only. Claude Code's tool authorization is session-scoped and provides no cross-session persistence.
+
+To allow specific tools permanently, add the authorization rules to `.claude/settings.json` by hand.
 
 ## Idle Chatter
 
-### Why does an Agent suddenly run on its own?
+### Why does an Agent run out of nowhere?
 
-That's the idle chatter feature. ClaudePet uses a small amount of tokens to generate context-aware dialogue via a subagent. You can toggle it off from the status bar menu under "Idle Chatter." Note that the agent activity will always be visible in the terminal — this cannot be hidden.
+That's the idle chatter feature. ClaudePet spends a small number of tokens to generate a context-aware line through a subagent. Turn it off from "Idle Chatter" in the status bar menu. The agent's execution will show in the terminal; this part cannot be hidden.
 
 ### What is `.claude/scheduled_tasks.lock`?
 
-This file is not created by ClaudePet. It's part of Claude Code's own scheduling infrastructure. Whenever any session uses `CronCreate` to set up a cron job, Claude Code places this lock file under `.claude/` in the project directory.
+Claude Code creates this file, not ClaudePet. Any session that calls `CronCreate` to set up a cron job causes Claude Code to drop this lock file in the project's `.claude/` directory.
 
-Since the idle chatter instruction in `~/.claude/CLAUDE.md` tells Claude to create a cron job at the start of every session, this file will appear in every project you work on.
+Because `~/.claude/CLAUDE.md` tells Claude to create a chatter cron at the start of each session, this file appears in every project you work in.
 
-You can either add it to your `.gitignore_global` to hide it, or if you don't want idle chatter at all, remove all chatter-related instructions from `~/.claude/CLAUDE.md`.
+Add it to `.gitignore_global` to ignore it. Or, if you want no chatter at all, delete the chatter instructions from `~/.claude/CLAUDE.md`.
 
-### Why does idle chatter sometimes not start?
+### Why does the chatter cron sometimes fail to start?
 
-The idle chatter cron job is configured through instructions in `~/.claude/CLAUDE.md`. Sometimes Claude skips it because:
+The chatter cron is configured through instructions in `~/.claude/CLAUDE.md`. Claude skips it sometimes because:
 
-1. The instruction sits in the middle of the file and gets diluted by other instructions
-2. Claude focuses on the user's first message at the start of a session
-3. Phrasing like "at the start of each session" can be treated as background info and ignored
+1. The instruction sits deep in the file, diluted by other directives
+2. Claude focuses on the user's first message at conversation start
+3. "At the start of each session" reads like background noise Claude can ignore
 
-The most effective fix: move the cron setup instruction to the very top of your `~/.claude/CLAUDE.md` with stronger, more directive wording in its own section.
+The fix: move the cron instruction to the top of `~/.claude/CLAUDE.md`, phrase it as a hard requirement, and give it its own section.
 
-## Persona & Customization
+## Characters and Customization
 
-### The generated persona doesn't look the way I want
+### The generated persona doesn't match what I wanted
 
-Try providing more detailed appearance descriptions when running `/create-persona`. Specifics like colors, outfit style, accessories, and hair style help produce better results. For example: "blue hoodie, round glasses, orange cat ears" works much better than "a cute character."
+Give `/create-persona` more specific visual descriptions. Colors, clothing style, accessories, hairstyle. "Blue body, round glasses, orange cat ears" produces better results than "a cute character".
 
-### Can I use my own custom sprites?
+### Can I use my own sprites?
 
-Yes. Place your sprite PNGs in the persona's `Personas/<id>/` directory with the correct naming convention (e.g., `idle_1.png`, `idle_2.png`, `bow_1.png`, etc.). Each animation state needs at least 2 frames, but you can add more than 4. Just make sure the filenames follow the `<state>_<number>.png` pattern.
+Yes. Drop your sprite PNGs into the persona's `Personas/<id>/` directory. Name them `<state>_<number>.png` (e.g. `idle_1.png`, `idle_2.png`, `bow_1.png`). Each animation state needs at least 2 frames. You can add more than 4.
 
-### Can I use custom sound effects?
+### Can I use custom sounds?
 
-Yes. Each persona can have its own sound effects. Place sound files in the persona's `Personas/<id>/` directory. Startup sounds: `startup.aif`, `startup.wav`, `startup.mp3`. Notification sounds: `notify.aif`, `notify.wav`, `notify.mp3`. Authorization sounds: `authorize.aif`, `authorize.wav`, `authorize.mp3`. If no custom sound is found, it falls back to the built-in default.
+Yes. Each persona can have its own sounds. Place sound files in `Personas/<id>/`. Startup sound: `startup.mp3`. Notification sound: `notify.mp3`. Authorization sound: `authorize.mp3`. Supported formats: AIF, WAV, MP3. Missing custom sounds fall back to the built-in defaults.
 
-## Known Issues
+### Can the character walk around the screen?
 
-### Claude Code's Dream mode triggers authorization prompts
+A helper that wanders across your display on its own sounds **distracting**. No plans for this feature.
 
-This is a known issue. Dream mode runs tool calls in the background, which triggers the PreToolUse hook the same way normal operations do. There is no workaround yet.
+## Known Issues (patches welcome)
 
-### Auto Edit Mode still triggers authorization bubbles or notifications
+### Claude Code's Dream feature triggers authorization notifications
 
-This is a known issue. When Claude Code runs in Auto Edit Mode, it skips its own permission prompts but still fires PreToolUse hooks. The hook cannot distinguish between normal mode and Auto Edit Mode, so ClaudePet shows authorization bubbles (or notification bubbles in "Authorize in Terminal" mode) as usual. There is no workaround yet.
+Dream mode fires PreToolUse hooks when running tool calls in the background, same as normal operation. No fix available.
 
-### Grep and Glob tools don't go through ClaudePet authorization
+### Auto Edit Mode still shows authorization or notification bubbles
 
-This is a known issue. The PreToolUse hook only intercepts destructive or interactive tools (Bash, Edit, Write, etc.). Grep and Glob are read-only search tools, so their authorization falls back to Claude Code's built-in terminal UI instead of ClaudePet's bubble.
+Claude Code skips its own authorization prompt in Auto Edit Mode, but PreToolUse hooks fire regardless. The hook cannot distinguish between normal mode and Auto Edit Mode, so ClaudePet shows authorization bubbles (or notification bubbles in "Authorize in Terminal" mode) as usual. No fix available.
+
+### Grep and Glob bypass ClaudePet authorization
+
+The PreToolUse hook intercepts destructive or interactive tools (Bash, Edit, Write, etc.) only. Grep and Glob are read-only search tools. Their authorization falls back to Claude Code's built-in terminal UI and skips ClaudePet's authorization bubble.
