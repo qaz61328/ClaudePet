@@ -101,7 +101,7 @@ Hook output uses the `hookSpecificOutput` structure:
 ### Authorization Mode Toggle
 
 Two modes, switchable via Status bar menu "Authorize in Terminal" toggle:
-- **Pet 授權模式** (default): Hook calls `/authorize`, pet shows interactive auth bubble with Allow/Always Allow/Deny buttons
+- **Pet Auth Mode** (default): Hook calls `/authorize`, pet shows interactive auth bubble with Allow/Always Allow/Deny buttons
 - **Authorize in Terminal**: Hook calls `/notify` (type=terminalAuth), pet shows notification with authorize sound, Claude Code shows native permission dialog with diffs
 
 Persisted in UserDefaults (key: `terminalAuthMode`). Exposed via `/health` endpoint as `terminalAuthMode` field. Synced to file flag `/tmp/claudepet-passthrough-auth` (created when on, removed when off). The hook script checks this file (zero network overhead) instead of querying `/health`.
