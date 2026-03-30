@@ -158,6 +158,8 @@ class PetServer {
     private func handleNotify(conn: NWConnection, body: Data?) {
         sendResponse(conn, status: 200, body: #"{"status":"received"}"#)
 
+        guard petWindow?.isVisible == true else { return }
+
         guard let body,
               let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any] else {
             return
@@ -177,6 +179,12 @@ class PetServer {
     // MARK: - /authorize (async hold)
 
     private func handleAuthorize(conn: NWConnection, body: Data?) {
+        // Fall through to Claude Code native auth when pet is hidden
+        guard petWindow?.isVisible == true else {
+            sendResponse(conn, status: 503, body: #"{"error":"pet hidden"}"#)
+            return
+        }
+
         guard let body,
               let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any] else {
             sendResponse(conn, status: 400, body: #"{"error":"invalid body"}"#)
@@ -377,6 +385,7 @@ class PetServer {
     private func handleChatter(conn: NWConnection, body: Data?) {
         sendResponse(conn, status: 200, body: #"{"status":"received"}"#)
 
+        guard petWindow?.isVisible == true else { return }
         guard Self.isChatterEnabled else { return }
 
         guard let body,
