@@ -44,7 +44,7 @@ idle/working --(click)--> bow -> talking -> restingState*
              --(/notify type=plan)--> talking -> restingState* (Plan Mode plan ready)
              --(/chatter)--> talking -> restingState* (idle chatter, no sound, 3.5s; discarded if auth/notify showing)
              --(/authorize)--> alert + AuthBubble
-               +--(approve)--> happy -> restingState*
+               +--(allow)--> happy -> restingState*
                +--(deny)--> restingState*
                +--(60s no action)--> alert (bubble dismissed, character stays in alert animation)
                |    +--(click character)--> re-show AuthBubble
@@ -84,7 +84,7 @@ ClaudePet integrates with Claude Code's [hook system](https://docs.anthropic.com
 6. Check `permissions.allow` from Claude Code settings — if the tool invocation matches an auto-allow pattern, exit 0 silently (no bubble, no notification). Reads global (`~/.claude/settings.json`), project (`$CWD/.claude/settings.json`), and local (`$CWD/.claude/settings.local.json`) settings. Supports exact tool names (`Edit`) and glob patterns (`Bash(npm test*)`)
 7. Check authorization mode:
    - **Authorize in Terminal** mode: POST `/notify` (type=terminalAuth), exit 0 — Claude Code shows native dialog with diffs
-   - **Pet auth mode** (default): POST `/authorize` for an authorization bubble (approve / always approve / deny)
+   - **Pet auth mode** (default): POST `/authorize` for an authorization bubble (allow / always allow / deny)
 
 Hook output uses the `hookSpecificOutput` structure:
 ```json
@@ -94,7 +94,7 @@ Hook output uses the `hookSpecificOutput` structure:
 
 ### Session Authorization Memory
 
-- "Always approve" writes the tool name to `/tmp/claudepet-session-allow-<hash>` (hash = md5 of CWD, per-project isolation)
+- "Always Allow" writes the tool name to `/tmp/claudepet-session-allow-<hash>` (hash = md5 of CWD, per-project isolation)
 - The hook script checks this file first. Tools already approved in the same project skip the authorization bubble.
 - ClaudePet clears all session-allow files on exit.
 

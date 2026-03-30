@@ -7,7 +7,7 @@ Your desktop buddy for Claude Code. Intercepts permissions, pops notifications, 
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v0.1.3-blue" />
+  <img src="https://img.shields.io/badge/version-0.1.4-blue" />
   <img src="https://img.shields.io/badge/macOS-13%2B-black?logo=apple" />
   <img src="https://img.shields.io/badge/Swift-5.9%2B-F05138?logo=swift&logoColor=white" />
 </p>
@@ -25,7 +25,7 @@ Create your own character with custom dialogue, sprites, and sounds.
 
 - Pixel-art character with idle, bow, alert, and happy animations
 - Speech bubbles for work complete, needs input, and plan ready events
-- Approve once, always approve, or deny — replaces terminal permission prompts
+- Allow once, always allow, or deny — replaces terminal permission prompts
 - Idle chatter throughout the day via cron-scheduled subagent
 - Persona system with custom dialogue, sprites, and sound effects
 - Status bar menu for visibility, persona switching, and chatter control
@@ -37,9 +37,9 @@ Create your own character with custom dialogue, sprites, and sounds.
   <img src="docs/media/how-it-works.png" height="120" />
 </p>
 
-ClaudePet runs an HTTP server on `127.0.0.1:23987`. Two Claude Code hooks feed it events: a Stop hook sends notifications when work finishes, and a PreToolUse hook intercepts tool calls that need authorization. The authorization bubble holds the HTTP connection until you click approve or deny, so Claude Code pauses in the meantime.
+ClaudePet runs an HTTP server on `127.0.0.1:23987`. Two Claude Code hooks feed it events: a Stop hook sends notifications when work finishes, and a PreToolUse hook intercepts tool calls that need authorization. The authorization bubble holds the HTTP connection until you click allow or deny, so Claude Code pauses in the meantime.
 
-"Always approve" remembers the tool name for the rest of the session. The memory clears when ClaudePet exits.
+"Always Allow" remembers the tool name for the rest of the session. The memory clears when ClaudePet exits.
 
 For the full HTTP API, animation state machine, and hook integration details, see [CLAUDE.md](CLAUDE.md).
 

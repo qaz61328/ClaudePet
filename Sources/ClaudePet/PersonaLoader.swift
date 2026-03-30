@@ -13,6 +13,11 @@ enum AuthorizeFormatter {
         "bash", "sh", "zsh", "python", "python3", "ruby", "node",
     ]
 
+    /// Truncate string with ellipsis if it exceeds maxLength
+    static func truncate(_ s: String, max maxLength: Int) -> String {
+        s.count > maxLength ? String(s.prefix(maxLength - 3)) + "..." : s
+    }
+
     /// Default file tool icon mappings (fallback when no JSON customization)
     static let defaultFileToolLabels: [String: FileToolLabel] = [
         "Edit":         FileToolLabel(pathIcon: "📄", actionLabel: "✏️ Edit File"),
@@ -43,8 +48,21 @@ enum AuthorizeFormatter {
                 lines.append("💻 \(simplifyCommand(cmd))")
             }
             if let desc = payload.toolDescription, !desc.isEmpty {
-                let short = desc.count > 40 ? String(desc.prefix(37)) + "..." : desc
-                lines.append("📋 \(short)")
+                lines.append("📋 \(truncate(desc, max: 40))")
+            }
+        case let tool where tool.hasPrefix("mcp__"):
+            // Raw MCP name (e.g. mcp__TMWiki__jira_search) is unreadable in the bubble — split into server + tool
+            let parts = tool.components(separatedBy: "__")
+            if parts.count >= 3 {
+                let server = parts[1]
+                let toolName = parts.dropFirst(2).joined(separator: "/")
+                lines[1] = !payload.project.isEmpty
+                    ? "🔧 \(server) · \(payload.project)"
+                    : "🔧 \(server)"
+                lines.append("🔌 \(toolName)")
+            }
+            if let desc = payload.toolDescription, !desc.isEmpty {
+                lines.append("📋 \(truncate(desc, max: 60))")
             }
         default:
             if let info = labels[payload.tool] {

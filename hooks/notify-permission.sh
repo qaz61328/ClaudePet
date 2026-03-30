@@ -64,6 +64,13 @@ case "$TOOL" in
     FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.notebook_path // ""' 2>/dev/null)
     TOOL_ARG="$FILE_PATH"
     ;;
+  mcp__*)
+    # MCP tools: extract key parameters as description for auth bubble display
+    DESCRIPTION=$(echo "$INPUT" | jq -r '[.tool_input | to_entries[] | select(.value | type == "string" or type == "number" or type == "boolean") | "\(.key): \(.value)"] | .[0:3] | join(", ")' 2>/dev/null)
+    if [ ${#DESCRIPTION} -gt 80 ]; then
+      DESCRIPTION="${DESCRIPTION:0:77}..."
+    fi
+    ;;
 esac
 
 # Auto-allowed by Claude Code permissions.allow → pass through silently (no bubble)

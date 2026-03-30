@@ -94,7 +94,7 @@ else
     ],
     "PreToolUse": [
       {
-        "matcher": "Read|Bash|Edit|Write|NotebookEdit|AskUserQuestion|ExitPlanMode",
+        "matcher": "Read|Bash|Edit|Write|NotebookEdit|AskUserQuestion|ExitPlanMode|mcp__.*",
         "hooks": [
           {
             "type": "command",
