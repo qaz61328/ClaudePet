@@ -10,6 +10,7 @@ enum AuthorizeFormatter {
     static let multiWordTools: Set<String> = [
         "git", "swift", "npm", "npx", "docker", "kubectl",
         "cargo", "pip", "pip3", "brew", "go", "dotnet", "gh",
+        "bash", "sh", "zsh", "python", "python3", "ruby", "node",
     ]
 
     /// Default file tool icon mappings (fallback when no JSON customization)

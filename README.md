@@ -1,12 +1,23 @@
 # ClaudePet
 
-![Version](https://img.shields.io/badge/version-v0.1.3-blue)
+Your desktop buddy for Claude Code. Intercepts permissions, pops notifications, mumbles to itself.
 
-A macOS desktop pet that replaces Claude Code's terminal permission prompts with an interactive pixel-art character.
+<p align="center">
+  <img src="docs/media/claude.png" width="96" />
+</p>
 
-ClaudePet sits on your desktop and intercepts Claude Code's notification and authorization events through hooks. When Claude Code finishes work, the character pops a speech bubble. When Claude Code needs permission to run a command or edit a file, the character shows an authorization bubble with approve/deny buttons. You click the bubble instead of typing in the terminal.
+<p align="center">
+  <img src="https://img.shields.io/badge/version-v0.1.3-blue" />
+  <img src="https://img.shields.io/badge/macOS-13%2B-black?logo=apple" />
+  <img src="https://img.shields.io/badge/Swift-5.9%2B-F05138?logo=swift&logoColor=white" />
+</p>
 
-## Features
+A pixel-art desktop pet that lives next to your terminal.
+It replaces Claude Code's permission prompts with clickable speech bubbles,
+notifies you when work is done, and occasionally talks to itself when bored.
+Create your own character with custom dialogue, sprites, and sounds.
+
+## Features <img src="docs/media/features.png" height="80" align="right" />
 
 - Pixel-art character with idle, bow, alert, and happy animations (4 frames each)
 - Speech bubbles for "work complete", "needs your input", and "plan ready" notifications
@@ -17,7 +28,7 @@ ClaudePet sits on your desktop and intercepts Claude Code's notification and aut
 - Sound effects on notifications and authorization requests (per-persona, with fallback)
 - Auto-launch via a shell wrapper that starts ClaudePet before every `claude` invocation
 
-## How it works
+## How it works <img src="docs/media/how-it-works.png" height="80" align="right" />
 
 ClaudePet runs an HTTP server on `127.0.0.1:23987`. Two Claude Code hooks feed it events: a Stop hook sends notifications when work finishes, and a PreToolUse hook intercepts tool calls that need authorization. The authorization bubble holds the HTTP connection until you click approve or deny, so Claude Code pauses in the meantime.
 
@@ -25,7 +36,7 @@ ClaudePet runs an HTTP server on `127.0.0.1:23987`. Two Claude Code hooks feed i
 
 For the full HTTP API, animation state machine, and hook integration details, see [CLAUDE.md](CLAUDE.md).
 
-## Quick start
+## Quick start <img src="docs/media/quick-start.png" height="100" align="right" />
 
 Requirements: macOS 13+, Swift 5.9+ (Xcode Command Line Tools), `jq`
 
@@ -37,9 +48,9 @@ bash scripts/setup.sh
 
 The setup script builds the binary, configures Claude Code hooks, sets up idle chatter scheduling, and adds a shell wrapper so ClaudePet launches with every `claude` invocation.
 
-For step-by-step instructions or manual configuration, see [SETUP.md](SETUP.md).
+For step-by-step instructions or manual configuration, see [SETUP.md](docs/SETUP.md) | [繁體中文](docs/SETUP_zh-TW.md).
 
-## Update
+## Update <img src="docs/media/update.png" height="80" align="right" />
 
 Click **Check for Updates** in the status bar menu. ClaudePet checks the latest GitHub Release and walks you through the upgrade automatically.
 
@@ -52,7 +63,7 @@ bash scripts/upgrade.sh
 
 The upgrade script rebuilds the binary, updates Claude Code hooks and configs, and restarts ClaudePet.
 
-## Uninstall
+## Uninstall <img src="docs/media/uninstall.png" height="80" align="right" />
 
 ```bash
 bash scripts/uninstall.sh
@@ -62,7 +73,15 @@ This removes all ClaudePet environment configs: Claude Code hooks, idle chatter 
 
 ## Personas
 
-ClaudePet ships with a built-in default persona. You can create additional characters with custom dialogue, pixel sprites, and sound effects.
+Every character is fully customizable — dialogue, pixel sprites, and sound effects. Build your own or use the built-in default.
+
+<p align="center">
+  <img src="docs/media/claude.png" width="48" />
+  <img src="docs/media/cat.png" width="48" />
+  <img src="docs/media/milk.png" width="48" />
+  <img src="docs/media/pom.png" width="48" />
+  <img src="docs/media/sun.png" width="48" />
+</p>
 
 The fastest way: run `/create-persona` inside Claude Code. It walks you through character design and generates everything.
 
@@ -70,9 +89,9 @@ You can also build a persona by hand. Drop a `persona.json` plus optional sprite
 
 Switch between installed personas from the status bar menu.
 
-## FAQ
+## FAQ <img src="docs/media/faq.png" height="80" align="right" />
 
-See [FAQ.md](FAQ.md) | [繁體中文](FAQ_zh-TW.md)
+See [FAQ.md](docs/FAQ.md) | [繁體中文](docs/FAQ_zh-TW.md)
 
 ## Contributing
 
