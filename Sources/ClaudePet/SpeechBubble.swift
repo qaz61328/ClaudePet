@@ -64,18 +64,16 @@ private func makeBubbleLabel(text: String, maxLines: Int) -> NSTextField {
     return label
 }
 
-/// Calculate label height after wrapping for a given width and padding
+/// Calculate label height after wrapping for a given width and padding.
+/// Uses NSTextFieldCell.cellSize(forBounds:) to account for the cell's
+/// internal line-fragment padding that NSString.boundingRect ignores.
 private func labelFittingHeight(_ label: NSTextField, forWidth width: CGFloat, horizontalPadding: CGFloat) -> CGFloat {
     let labelWidth = width - horizontalPadding * 2
-    let rect = (label.stringValue as NSString).boundingRect(
-        with: NSSize(width: labelWidth, height: .greatestFiniteMagnitude),
-        options: [.usesLineFragmentOrigin, .usesFontLeading],
-        attributes: [.font: label.font!]
-    )
+    let cellSize = label.cell!.cellSize(forBounds: NSRect(x: 0, y: 0, width: labelWidth, height: .greatestFiniteMagnitude))
     let maxLines = CGFloat(label.maximumNumberOfLines)
     let lineHeight = label.font!.ascender - label.font!.descender + label.font!.leading
     let maxLabelHeight = maxLines * lineHeight
-    return min(ceil(rect.height), maxLabelHeight)
+    return min(ceil(cellSize.height), maxLabelHeight)
 }
 
 /// Create bubble shape path (rounded rect + bottom triangle tail)
