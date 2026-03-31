@@ -18,3 +18,14 @@
 "Already latest (v%@)" = "Already latest (v%@)";
 "v%@ → v%@" = "v%@ → v%@";
 "Pull failed (conflicts?)" = "Pull failed (conflicts?)";
+
+/* Keyboard Shortcuts */
+"Keyboard Shortcuts..." = "Keyboard Shortcuts...";
+"Keyboard Shortcuts" = "Keyboard Shortcuts";
+"Toggle Pet" = "Show/Hide Pet";
+"Allow (Auth)" = "Allow";
+"Always Allow (Auth)" = "Always Allow";
+"Deny (Auth)" = "Deny";
+"Restore Defaults" = "Restore Defaults";
+"Press shortcut..." = "Press shortcut...";
+"Used by \"%@\"" = "Used by \"%@\"";

@@ -18,3 +18,14 @@
 "Already latest (v%@)" = "已是最新版 (v%@)";
 "v%@ → v%@" = "v%@ → v%@";
 "Pull failed (conflicts?)" = "拉取失敗（有衝突？）";
+
+/* Keyboard Shortcuts */
+"Keyboard Shortcuts..." = "快捷鍵設定⋯";
+"Keyboard Shortcuts" = "快捷鍵設定";
+"Toggle Pet" = "顯示／隱藏小幫手";
+"Allow (Auth)" = "允許";
+"Always Allow (Auth)" = "永遠允許";
+"Deny (Auth)" = "拒絕";
+"Restore Defaults" = "還原預設值";
+"Press shortcut..." = "按下快捷鍵⋯";
+"Used by \"%@\"" = "已被「%@」使用";

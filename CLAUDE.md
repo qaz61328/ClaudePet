@@ -20,6 +20,8 @@ PetView.swift           # Character rendering + animation state machine + bubble
 SpeechBubble.swift      # Notification bubble (SpeechBubbleView) + authorization bubble (AuthBubbleView)
 SoundPlayer.swift       # Sound playback (NSSound) + per-persona sound loading + fallback
 PetServer.swift         # HTTP Server (NWListener + CFHTTPMessage)
+GlobalHotKeyManager.swift # Global keyboard shortcuts (Carbon RegisterEventHotKey)
+ShortcutRecorderView.swift # Key combo recorder view for preferences UI
 DialogueBank.swift      # Persona protocol + DefaultPersona (fallback) + DialogueBank facade
 PersonaLoader.swift     # PersonaData (JSON model) + DataDrivenPersona + AuthorizeFormatter + PersonaDirectory
 TerminalActivator.swift # Click-to-switch-to-terminal (auto-detects user's terminal, supports 7 terminals + AppleScript tab switching)
@@ -32,7 +34,8 @@ Resources/              # Built-in pixel sprites PNG + persona.json (default/ su
 - **Transparent borderless window** (`ClickThroughWindow`): `.borderless`, `.floating`, transparent background, draggable
 - **HTTP Server** (port 23987): bound to 127.0.0.1, `@MainActor` + `queue: .main` for Swift 6 concurrency safety
 - **Authorization async hold**: `/authorize` uses `CheckedContinuation` to hold the connection until the user clicks a button
-- **Status bar icon** (NSStatusBar): show/hide, say something, persona switching, quit
+- **Status bar icon** (NSStatusBar): show/hide, say something, persona switching, keyboard shortcuts preferences, quit
+- **Global keyboard shortcuts** (`GlobalHotKeyManager`): Carbon `RegisterEventHotKey` — works regardless of which app is focused, no Accessibility permission required
 - **No Dock icon**: `NSApp.setActivationPolicy(.accessory)`
 
 ### Animation State Machine
@@ -44,10 +47,11 @@ idle/working --(click)--> bow -> talking -> restingState*
              --(/notify type=plan)--> talking -> restingState* (Plan Mode plan ready)
              --(/chatter)--> talking -> restingState* (idle chatter, no sound, 3.5s; discarded if auth/notify showing)
              --(/authorize)--> alert + AuthBubble
-               +--(allow)--> happy -> restingState*
-               +--(deny)--> restingState*
+               +--(allow / ⌃⌥Y)--> happy -> restingState*
+               +--(deny / ⌃⌥N)--> restingState*
                +--(60s no action)--> alert (bubble dismissed, character stays in alert animation)
                |    +--(click character)--> re-show AuthBubble
+               |    +--(⌃⌥Y / ⌃⌥A / ⌃⌥N)--> same as button click (hotkey works even after bubble dismiss)
                +--(client disconnect)--> restingState* (auto cleanup)
 
 idle --(/working active=true)--> working
@@ -67,6 +71,23 @@ All POST endpoints require auth token (`X-ClaudePet-Token` header) and Host head
 | POST | `/authorize` | Authorization request. Holds the connection until the user clicks a button. 60-second timeout. |
 | POST | `/chatter` | Idle chatter (no sound). Returns 200 immediately. Body: `{"message":"mumble text"}`. Silently discarded if an auth/notify bubble is showing. |
 | POST | `/working` | Session work state tracking. Returns 200 immediately. Body: `{"session":"<uuid>","active":true/false}`. Multi-session reference counting, 3-minute auto-expiry. |
+
+### Global Keyboard Shortcuts
+
+Uses Carbon `RegisterEventHotKey` for system-wide hotkeys that work regardless of which app is focused. No Accessibility permission required.
+
+| Action | Default | Description |
+|--------|---------|-------------|
+| Toggle Pet | `⌃⌥P` | Show/hide the pet window |
+| Auth: Allow | `⌃⌥Y` | Approve pending authorization (only when auth bubble is active) |
+| Auth: Always Allow | `⌃⌥A` | Always-allow pending authorization for the session |
+| Auth: Deny | `⌃⌥N` | Deny pending authorization |
+
+- **Customizable**: Status bar menu → "Keyboard Shortcuts..." opens a preferences window with key recording
+- **Persistence**: Key bindings stored in `UserDefaults` (keys: `hotkey.togglePet`, `hotkey.authAllow`, etc.)
+- **Auth shortcuts guard**: Only fire when `PetView.hasPendingAuth` is true; silently ignored otherwise
+- **`GlobalHotKeyManager`**: `@MainActor` singleton wrapping Carbon API. Installed in `AppDelegate`, cleaned up in `applicationWillTerminate`.
+- **`ShortcutRecorderView`**: Custom `NSView` for key recording. Click to record, Esc to cancel, Delete to clear. Conflict detection prevents duplicate bindings.
 
 ### Security
 

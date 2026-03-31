@@ -3,7 +3,7 @@ import AppKit
 /// Resolved localized sub-bundle (workaround: SPM resource bundles lack CFBundleLocalizations,
 /// so Bundle.module.preferredLocalizations always falls back to the development region.
 /// We manually match Locale.preferredLanguages against available .lproj directories.)
-private let localizedBundle: Bundle = {
+let localizedBundle: Bundle = {
     let base = Bundle.module
     let match = Bundle.preferredLocalizations(from: base.localizations,
                                               forPreferences: Locale.preferredLanguages)
@@ -16,7 +16,7 @@ private let localizedBundle: Bundle = {
 }()
 
 /// Shorthand for localized string lookup
-private func L(_ key: String.LocalizationValue) -> String {
+func L(_ key: String.LocalizationValue) -> String {
     String(localized: key, bundle: localizedBundle)
 }
 
@@ -87,6 +87,10 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
 
         menu.addItem(chatterItem)
         menu.addItem(authModeItem)
+
+        let shortcutsItem = NSMenuItem(title: L("Keyboard Shortcuts..."), action: #selector(openShortcutPreferences), keyEquivalent: "")
+        shortcutsItem.target = self
+        menu.addItem(shortcutsItem)
         menu.addItem(.separator())
         let personaItem = NSMenuItem(title: L("Persona"), action: nil, keyEquivalent: "")
         personaItem.submenu = NSMenu()
@@ -179,6 +183,75 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
 
     @objc private func toggleAuthMode() {
         PetServer.isTerminalAuthMode.toggle()
+    }
+
+    // MARK: - Keyboard Shortcuts Preferences
+
+    private var shortcutWindow: NSWindow?
+
+    @objc private func openShortcutPreferences() {
+        if let existing = shortcutWindow {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let winWidth: CGFloat = 400
+        let rowHeight: CGFloat = 36
+        let actions = HotKeyAction.allCases
+        let contentHeight = CGFloat(actions.count) * rowHeight + 70 // rows + padding + button
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: winWidth, height: contentHeight),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = L("Keyboard Shortcuts")
+        window.center()
+        window.isReleasedWhenClosed = false
+
+        let contentView = NSView(frame: NSRect(x: 0, y: 0, width: winWidth, height: contentHeight))
+        window.contentView = contentView
+
+        let pad: CGFloat = 20
+        let labelWidth: CGFloat = 160
+        let recorderWidth: CGFloat = 140
+
+        for (i, action) in actions.enumerated() {
+            let y = contentHeight - CGFloat(i + 1) * rowHeight - 10
+
+            let label = NSTextField(labelWithString: action.localizedName)
+            label.font = .systemFont(ofSize: 13)
+            label.frame = NSRect(x: pad, y: y, width: labelWidth, height: 22)
+            contentView.addSubview(label)
+
+            let combo = GlobalHotKeyManager.shared?.comboForAction(action)
+            let recorder = ShortcutRecorderView(combo: combo, action: action)
+            recorder.frame = NSRect(x: pad + labelWidth + 10, y: y, width: recorderWidth, height: 24)
+            recorder.onRecorded = { newCombo in
+                GlobalHotKeyManager.shared?.updateBinding(for: action, combo: newCombo)
+            }
+            contentView.addSubview(recorder)
+        }
+
+        let buttonY: CGFloat = 14
+        let restoreButton = NSButton(title: L("Restore Defaults"), target: self, action: #selector(restoreDefaultShortcuts(_:)))
+        restoreButton.bezelStyle = .rounded
+        restoreButton.frame = NSRect(x: (winWidth - 140) / 2, y: buttonY, width: 140, height: 28)
+        contentView.addSubview(restoreButton)
+
+        self.shortcutWindow = window
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc private func restoreDefaultShortcuts(_ sender: NSButton) {
+        GlobalHotKeyManager.shared?.restoreDefaults()
+        // Close and reopen to refresh recorder views
+        shortcutWindow?.close()
+        shortcutWindow = nil
+        openShortcutPreferences()
     }
 
     private var isUpgrading = false

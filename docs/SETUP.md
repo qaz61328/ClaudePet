@@ -165,6 +165,34 @@ All of these except `persona.json` are optional. Missing sprites fall back to th
 
 Switch personas from the status bar menu. The selection persists across restarts. Use "Reload Personas" at the bottom of the menu to pick up newly added personas without restarting.
 
+## Keyboard Shortcuts
+
+ClaudePet registers system-wide keyboard shortcuts that work regardless of which app is focused. No Accessibility permission required.
+
+### Default Bindings
+
+| Action | Shortcut | Description |
+|--------|----------|-------------|
+| Toggle Pet | `⌃⌥P` | Show/hide the pet |
+| Allow (Auth) | `⌃⌥Y` | Approve the pending authorization request |
+| Always Allow (Auth) | `⌃⌥A` | Always allow for the rest of the session |
+| Deny (Auth) | `⌃⌥N` | Deny the pending authorization request |
+
+The three authorization shortcuts only take effect when an authorization bubble is active. At all other times they do nothing.
+
+### Customizing
+
+Open the status bar menu and click **Keyboard Shortcuts...**. A preferences window appears with one row per action. Click a row to enter recording mode, then press a modifier+key combination to set the new shortcut.
+
+- At least one modifier key (⌃, ⌥, ⇧, or ⌘) is required
+- Press **Esc** to cancel recording
+- Press **Delete** to clear the binding
+- Duplicate bindings are detected and rejected with a warning
+
+Click **Restore Defaults** to reset all shortcuts to the defaults above.
+
+Custom bindings persist in UserDefaults across restarts.
+
 ## Token Usage Note
 
 The idle chatter feature uses a CronCreate-triggered subagent running on the haiku model. Each chatter check consumes a small number of tokens: the subagent reads the chatter prompt file, evaluates whether to speak, and if so, sends a short POST request.

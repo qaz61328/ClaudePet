@@ -437,6 +437,16 @@ class PetView: NSView {
         scheduleAuthBubbleDismiss()
     }
 
+    /// Whether an authorization request is pending (for global hotkey guard)
+    var hasPendingAuth: Bool { pendingAuth != nil }
+
+    /// Trigger an auth decision programmatically (from global hotkey)
+    func invokeAuthDecision(_ decision: AuthDecision) {
+        guard let pending = pendingAuth else { return }
+        pendingAuth = nil  // Prevent re-entry from concurrent hotkey + button click
+        pending.onDecision(decision)
+    }
+
     func cancelPendingAuthorization() {
         pendingAuth = nil
         cancelAuthDismissTimer()

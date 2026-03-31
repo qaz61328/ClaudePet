@@ -7,6 +7,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var petWindow: PetWindow!
     var statusBarMenu: StatusBarMenu!
     var server: PetServer!
+    var hotKeyManager: GlobalHotKeyManager!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Don't show in Dock
@@ -52,6 +53,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } catch {
             print("[ClaudePet] Failed to start server: \(error)")
         }
+
+        // Global keyboard shortcuts
+        hotKeyManager = GlobalHotKeyManager(petWindow: petWindow)
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -59,6 +63,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        hotKeyManager?.teardown()
         AppDelegate.cleanupSessionAllowFiles()
         try? FileManager.default.removeItem(atPath: PetServer.passthroughAuthFlagPath)
         try? FileManager.default.removeItem(atPath: PetServer.tokenPath)
