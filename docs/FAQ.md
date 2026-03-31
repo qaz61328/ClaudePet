@@ -71,3 +71,7 @@ Claude Code skips its own authorization prompt in Auto Edit Mode, but PreToolUse
 ### Grep and Glob bypass ClaudePet authorization
 
 The PreToolUse hook intercepts destructive or interactive tools (Bash, Edit, Write, etc.) only. Grep and Glob are read-only search tools. Their authorization falls back to Claude Code's built-in terminal UI and skips ClaudePet's authorization bubble.
+
+### Editing `.claude/` files bypasses ClaudePet authorization
+
+When Claude Code edits files inside the `.claude/` directory (skills, settings, etc.), it uses a built-in settings-protection mechanism instead of the normal PreToolUse hook flow. The terminal shows a special dialog with an "allow Claude to edit its own settings for this session" option. ClaudePet's authorization bubble does not appear for these edits. No fix available — this is a Claude Code internal behavior.

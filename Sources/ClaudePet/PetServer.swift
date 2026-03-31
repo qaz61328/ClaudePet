@@ -27,6 +27,15 @@ class PetServer {
     /// Session timeout interval (seconds)
     private static let sessionTimeoutInterval: TimeInterval = 180
 
+    // MARK: - Auth Token (prevents unauthorized local process access)
+
+    /// Random token generated per launch, written to $TMPDIR/claudepet-token (mode 0600)
+    static let authToken = UUID().uuidString
+    static let tokenPath = FileManager.default.temporaryDirectory.appendingPathComponent("claudepet-token").path
+
+    /// Valid Host header values (rejects DNS rebinding)
+    private static let allowedHosts: Set<String> = ["127.0.0.1:23987", "localhost:23987", "127.0.0.1", "localhost"]
+
     init(petWindow: PetWindow) {
         self.petWindow = petWindow
     }
@@ -58,6 +67,13 @@ class PetServer {
         }
         l.start(queue: .main)
         self.listener = l
+
+        // Write auth token to $TMPDIR (mode 0600, owner-only read/write)
+        FileManager.default.createFile(
+            atPath: Self.tokenPath,
+            contents: Self.authToken.data(using: .utf8),
+            attributes: [.posixPermissions: 0o600]
+        )
     }
 
     func stop() {
@@ -69,13 +85,13 @@ class PetServer {
 
     private func handleConnection(_ conn: NWConnection) {
         conn.start(queue: .main)
-        receiveHTTPRequest(conn) { [weak self] method, path, body in
+        receiveHTTPRequest(conn) { [weak self] method, path, body, host, token in
             guard let self else { conn.cancel(); return }
-            self.route(conn: conn, method: method, path: path, body: body)
+            self.route(conn: conn, method: method, path: path, body: body, host: host, token: token)
         }
     }
 
-    private func receiveHTTPRequest(_ conn: NWConnection, completion: @escaping @MainActor (String, String, Data?) -> Void) {
+    private func receiveHTTPRequest(_ conn: NWConnection, completion: @escaping @MainActor (String, String, Data?, String?, String?) -> Void) {
         let msg = CFHTTPMessageCreateEmpty(nil, true).takeRetainedValue()
 
         func readMore() {
@@ -106,8 +122,10 @@ class PetServer {
                         let method = CFHTTPMessageCopyRequestMethod(msg)?.takeRetainedValue() as String? ?? "GET"
                         let url = CFHTTPMessageCopyRequestURL(msg)?.takeRetainedValue() as URL?
                         let path = url?.path ?? "/"
+                        let host = CFHTTPMessageCopyHeaderFieldValue(msg, "Host" as CFString)?.takeRetainedValue() as String?
+                        let token = CFHTTPMessageCopyHeaderFieldValue(msg, "X-ClaudePet-Token" as CFString)?.takeRetainedValue() as String?
                         Task { @MainActor in
-                            completion(method, path, bodyData)
+                            completion(method, path, bodyData, host, token)
                         }
                         return
                     }
@@ -127,14 +145,35 @@ class PetServer {
 
     // MARK: - Routing
 
-    private func route(conn: NWConnection, method: String, path: String, body: Data?) {
+    private func route(conn: NWConnection, method: String, path: String, body: Data?, host: String?, token: String?) {
+        // Auth token + Host validation for all POST endpoints (prevents unauthorized access & DNS rebinding)
+        if method == "POST" {
+            guard let token, token == Self.authToken else {
+                sendJSON(conn, status: 403, body: ErrorResponse(error: "forbidden"))
+                return
+            }
+            guard let host, Self.allowedHosts.contains(host) else {
+                sendJSON(conn, status: 403, body: ErrorResponse(error: "forbidden"))
+                return
+            }
+        }
+
+        // Reject oversized request bodies (64KB limit, prevents memory exhaustion)
+        if let body, body.count > 65_536 {
+            sendJSON(conn, status: 413, body: ErrorResponse(error: "body too large"))
+            return
+        }
+
         switch (method, path) {
         case ("GET", "/health"):
             let personaID = DialogueBank.current.id
             let sessionCount = activeSessions.count
             let chatterOn = Self.isChatterEnabled
             let termAuth = Self.isTerminalAuthMode
-            sendResponse(conn, status: 200, body: #"{"status":"ok","version":"\#(PersonaDirectory.appVersion)","persona":"\#(personaID)","activeSessions":\#(sessionCount),"chatterEnabled":\#(chatterOn),"terminalAuthMode":\#(termAuth)}"#)
+            sendJSON(conn, status: 200, body: HealthResponse(
+                version: PersonaDirectory.appVersion, persona: personaID,
+                activeSessions: sessionCount, chatterEnabled: chatterOn, terminalAuthMode: termAuth
+            ))
 
         case ("POST", "/notify"):
             handleNotify(conn: conn, body: body)
@@ -149,14 +188,14 @@ class PetServer {
             handleWorking(conn: conn, body: body)
 
         default:
-            sendResponse(conn, status: 404, body: #"{"error":"not found"}"#)
+            sendJSON(conn, status: 404, body: ErrorResponse(error: "not found"))
         }
     }
 
     // MARK: - /notify
 
     private func handleNotify(conn: NWConnection, body: Data?) {
-        sendResponse(conn, status: 200, body: #"{"status":"received"}"#)
+        sendJSON(conn, status: 200, body: StatusResponse(status: "received"))
 
         guard petWindow?.isVisible == true else { return }
 
@@ -181,13 +220,13 @@ class PetServer {
     private func handleAuthorize(conn: NWConnection, body: Data?) {
         // Fall through to Claude Code native auth when pet is hidden
         guard petWindow?.isVisible == true else {
-            sendResponse(conn, status: 503, body: #"{"error":"pet hidden"}"#)
+            sendJSON(conn, status: 503, body: ErrorResponse(error: "pet hidden"))
             return
         }
 
         guard let body,
               let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any] else {
-            sendResponse(conn, status: 400, body: #"{"error":"invalid body"}"#)
+            sendJSON(conn, status: 400, body: ErrorResponse(error: "invalid body"))
             return
         }
 
@@ -262,21 +301,21 @@ class PetServer {
             }
 
             // Decision made, clear disconnect handler
-            // Prevent sendResponse → conn.cancel() from triggering cancelPendingAuthorization() killing the response bubble timer
+            // Prevent conn.cancel() from triggering cancelPendingAuthorization() killing the response bubble timer
             self.pendingAuthConn?.stateUpdateHandler = nil
 
             if let c = self.pendingAuthConn {
                 let tool = payload.tool
-                let responseBody: String
+                let response: AuthDecisionResponse
                 switch decision {
                 case .approve:
-                    responseBody = #"{"decision":"approve"}"#
+                    response = AuthDecisionResponse(decision: decision.rawValue)
                 case .approveSession:
-                    responseBody = #"{"decision":"approve_session","tool":"\#(tool)"}"#
+                    response = AuthDecisionResponse(decision: decision.rawValue, tool: tool)
                 case .deny:
-                    responseBody = #"{"decision":"deny","reason":"User denied"}"#
+                    response = AuthDecisionResponse(decision: decision.rawValue, reason: "User denied")
                 }
-                self.sendResponse(c, status: 200, body: responseBody)
+                self.sendJSON(c, status: 200, body: response)
                 self.pendingAuthConn = nil
             }
 
@@ -295,7 +334,7 @@ class PetServer {
     // MARK: - /working (session working state tracking)
 
     private func handleWorking(conn: NWConnection, body: Data?) {
-        sendResponse(conn, status: 200, body: #"{"status":"received"}"#)
+        sendJSON(conn, status: 200, body: StatusResponse(status: "received"))
 
         guard let body,
               let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
@@ -358,7 +397,7 @@ class PetServer {
     // MARK: - Authorization Mode
 
     private static let terminalAuthModeKey = "terminalAuthMode"
-    static let passthroughAuthFlagPath = "/tmp/claudepet-passthrough-auth"
+    static let passthroughAuthFlagPath = FileManager.default.temporaryDirectory.appendingPathComponent("claudepet-passthrough-auth").path
 
     /// true = Terminal handles auth (hook sends notification only, exits 0)
     /// false = Pet handles auth (hook calls /authorize, pet shows bubble)
@@ -383,7 +422,7 @@ class PetServer {
     }
 
     private func handleChatter(conn: NWConnection, body: Data?) {
-        sendResponse(conn, status: 200, body: #"{"status":"received"}"#)
+        sendJSON(conn, status: 200, body: StatusResponse(status: "received"))
 
         guard petWindow?.isVisible == true else { return }
         guard Self.isChatterEnabled else { return }
@@ -400,8 +439,14 @@ class PetServer {
 
     // MARK: - HTTP Response
 
-    private func sendResponse(_ conn: NWConnection, status: Int, body: String) {
-        let bodyData = body.data(using: .utf8) ?? Data()
+    private static let jsonEncoder = JSONEncoder()
+
+    private func sendJSON<T: Encodable>(_ conn: NWConnection, status: Int, body: T) {
+        let bodyData = (try? Self.jsonEncoder.encode(body)) ?? Data("{}".utf8)
+        sendRawData(conn, status: status, bodyData: bodyData)
+    }
+
+    private func sendRawData(_ conn: NWConnection, status: Int, bodyData: Data) {
         let resp = CFHTTPMessageCreateResponse(nil, CFIndex(status), nil, kCFHTTPVersion1_1).takeRetainedValue()
         CFHTTPMessageSetHeaderFieldValue(resp, "Content-Type" as CFString, "application/json; charset=utf-8" as CFString)
         CFHTTPMessageSetHeaderFieldValue(resp, "Content-Length" as CFString, "\(bodyData.count)" as CFString)
@@ -417,4 +462,24 @@ class PetServer {
             conn.cancel()
         })
     }
+}
+
+// MARK: - Response Types (Codable, prevents JSON injection via string interpolation)
+
+private struct HealthResponse: Encodable {
+    let status = "ok"
+    let version: String
+    let persona: String
+    let activeSessions: Int
+    let chatterEnabled: Bool
+    let terminalAuthMode: Bool
+}
+
+private struct StatusResponse: Encodable { let status: String }
+private struct ErrorResponse: Encodable { let error: String }
+
+private struct AuthDecisionResponse: Encodable {
+    let decision: String
+    var tool: String?
+    var reason: String?
 }

@@ -178,6 +178,12 @@ echo
 printf "${BOLD}Restarting ClaudePet...${NC}\n"
 # When launched from menu, ClaudePet terminates itself.
 # When launched from terminal, pkill handles it.
+# SIGTERM first (allows cleanup), poll for exit, fallback SIGKILL
+pkill -f ".build/release/ClaudePet" 2>/dev/null || true
+for _ in 1 2 3 4; do
+  pgrep -f ".build/release/ClaudePet" >/dev/null 2>&1 || break
+  sleep 0.5
+done
 pkill -9 -f ".build/release/ClaudePet" 2>/dev/null || true
 # Wait for old process to fully exit
 for _ in 1 2 3 4 5; do

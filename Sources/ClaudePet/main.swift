@@ -12,6 +12,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Don't show in Dock
         NSApp.setActivationPolicy(.accessory)
 
+        // Startup cleanup: remove stale session-allow files from previous unclean exit
+        AppDelegate.cleanupSessionAllowFiles()
+
         // Register bundled font (jf-openhuninn)
         if let fontURL = Bundle.module.url(forResource: "jf-openhuninn-2.1", withExtension: "ttf") {
             CTFontManagerRegisterFontsForURL(fontURL as CFURL, .process, nil)
@@ -56,13 +59,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        // Clean up all per-project session authorization memory files
-        if let tmpContents = try? FileManager.default.contentsOfDirectory(atPath: "/tmp") {
+        AppDelegate.cleanupSessionAllowFiles()
+        try? FileManager.default.removeItem(atPath: PetServer.passthroughAuthFlagPath)
+        try? FileManager.default.removeItem(atPath: PetServer.tokenPath)
+    }
+
+    private static func cleanupSessionAllowFiles() {
+        let tmpDir = FileManager.default.temporaryDirectory.path
+        if let tmpContents = try? FileManager.default.contentsOfDirectory(atPath: tmpDir) {
             for file in tmpContents where file.hasPrefix("claudepet-session-allow-") {
-                try? FileManager.default.removeItem(atPath: "/tmp/\(file)")
+                try? FileManager.default.removeItem(atPath: "\(tmpDir)/\(file)")
             }
         }
-        try? FileManager.default.removeItem(atPath: PetServer.passthroughAuthFlagPath)
     }
 }
 

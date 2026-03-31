@@ -58,6 +58,8 @@ working --(/working active=false, no other sessions)--> idle
 
 ### HTTP Endpoints
 
+All POST endpoints require auth token (`X-ClaudePet-Token` header) and Host header validation. GET `/health` is unauthenticated (used for singleton check before token exists). Request bodies are limited to 64KB.
+
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | Health check. Returns `{"status":"ok","version":"<ver>","persona":"<id>","activeSessions":<n>,"chatterEnabled":<bool>,"terminalAuthMode":<bool>}` |
@@ -66,13 +68,21 @@ working --(/working active=false, no other sessions)--> idle
 | POST | `/chatter` | Idle chatter (no sound). Returns 200 immediately. Body: `{"message":"mumble text"}`. Silently discarded if an auth/notify bubble is showing. |
 | POST | `/working` | Session work state tracking. Returns 200 immediately. Body: `{"session":"<uuid>","active":true/false}`. Multi-session reference counting, 3-minute auto-expiry. |
 
+### Security
+
+- **Auth token**: UUID generated per launch, written to `$TMPDIR/claudepet-token` (mode 0600). Hook scripts read this file and send as `X-ClaudePet-Token` header on all POST requests. Server validates before processing.
+- **DNS rebinding protection**: Host header validated against `127.0.0.1:23987` / `localhost:23987` on all POST endpoints.
+- **Temp files in $TMPDIR**: All temp files (`claudepet-token`, `claudepet-session-allow-*`, `claudepet-passthrough-auth`, `claudepet-chatter-lock`) stored in `$TMPDIR` (macOS per-user directory, not world-accessible) instead of `/tmp`.
+- **Startup cleanup**: On launch, ClaudePet clears stale session-allow files from previous unclean exits (SIGKILL, crash). Token is regenerated per launch (overwrites stale file). Passthrough-auth flag is synced from UserDefaults.
+- **Safe JSON**: All HTTP responses use `JSONEncoder` (Codable structs). All hook script curl payloads use `jq -n --arg` for safe assembly. No string interpolation into JSON.
+
 ### Claude Code Hook Integration
 
 ClaudePet integrates with Claude Code's [hook system](https://docs.anthropic.com/en/docs/claude-code/hooks):
 
 **Stop hook** (`notify-stop.sh`):
 1. POST `/working` (active=false) to end the session's working state
-2. Check for `/tmp/claudepet-chatter-lock`. If it exists, delete it and skip the notification (cron-triggered chatter sessions don't need a "work complete" bubble).
+2. Check for `$TMPDIR/claudepet-chatter-lock`. If it exists, delete it and skip the notification (cron-triggered chatter sessions don't need a "work complete" bubble).
 3. POST `/notify` to show a "work complete" speech bubble
 
 **PreToolUse hook** (`notify-permission.sh`):
@@ -94,9 +104,9 @@ Hook output uses the `hookSpecificOutput` structure:
 
 ### Session Authorization Memory
 
-- "Always Allow" writes the tool name to `/tmp/claudepet-session-allow-<hash>` (hash = md5 of CWD, per-project isolation)
+- "Always Allow" writes the tool name to `$TMPDIR/claudepet-session-allow-<hash>` (hash = md5 of CWD, per-project isolation)
 - The hook script checks this file first. Tools already approved in the same project skip the authorization bubble.
-- ClaudePet clears all session-allow files on exit.
+- ClaudePet clears all session-allow files on startup (defensive, handles unclean exit) and on exit.
 
 ### Authorization Mode Toggle
 
@@ -104,14 +114,14 @@ Two modes, switchable via Status bar menu "Authorize in Terminal" toggle:
 - **Pet Auth Mode** (default): Hook calls `/authorize`, pet shows interactive auth bubble with Allow/Always Allow/Deny buttons
 - **Authorize in Terminal**: Hook calls `/notify` (type=terminalAuth), pet shows notification with authorize sound, Claude Code shows native permission dialog with diffs
 
-Persisted in UserDefaults (key: `terminalAuthMode`). Exposed via `/health` endpoint as `terminalAuthMode` field. Synced to file flag `/tmp/claudepet-passthrough-auth` (created when on, removed when off). The hook script checks this file (zero network overhead) instead of querying `/health`.
+Persisted in UserDefaults (key: `terminalAuthMode`). Exposed via `/health` endpoint as `terminalAuthMode` field. Synced to file flag `$TMPDIR/claudepet-passthrough-auth` (created when on, removed when off). The hook script checks this file (zero network overhead) instead of querying `/health`.
 
 ### Idle Chatter
 
 The character occasionally mumbles to itself, adding life to the desktop.
 
 **Trigger methods:**
-- **Scheduled**: Claude Code's CronCreate fires a cron job. The job first runs `touch /tmp/claudepet-chatter-lock` (prevents the Stop hook from sending an extra "work complete" notification), then launches a subagent that reads `Personas/<id>/chatter-prompt.md` to decide what to say. The subagent approach avoids bloating the main conversation context.
+- **Scheduled**: Claude Code's CronCreate fires a cron job. The job first runs `touch $TMPDIR/claudepet-chatter-lock` (prevents the Stop hook from sending an extra "work complete" notification), then launches a subagent that reads `Personas/<id>/chatter-prompt.md` to decide what to say. The subagent approach avoids bloating the main conversation context.
 - **Spontaneous**: Claude can POST `/chatter` at any point during a conversation when the timing feels right. No cron, no lock file needed.
 
 **Dialogue generation modes** (defined in `chatter-prompt.md`): situational reactions, encouragement, idle rambling, time awareness, self-deprecation, humming, health reminders, weather/seasonal comments. Eight modes total, selected by context.

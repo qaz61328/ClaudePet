@@ -71,3 +71,7 @@ Claude Code 在 Auto Edit Mode 下雖然會跳過自己的授權提示，但 Pre
 ### Grep 和 Glob 工具不會走 ClaudePet 授權
 
 PreToolUse hook 只攔截具破壞性或互動性的工具（Bash、Edit、Write 等）。Grep 和 Glob 是唯讀搜尋工具，授權會回退到 Claude Code 終端機內建 UI，不經過 ClaudePet 的授權泡泡。
+
+### 編輯 `.claude/` 目錄下的檔案不會走 ClaudePet 授權
+
+Claude Code 編輯 `.claude/` 目錄下的檔案（skills、settings 等）時，會使用內建的設定保護機制，不走一般的 PreToolUse hook 流程。終端機會顯示特殊對話框，帶有「allow Claude to edit its own settings for this session」的選項。這類編輯不會觸發 ClaudePet 的授權泡泡。目前無法修復，這是 Claude Code 的內部行為。

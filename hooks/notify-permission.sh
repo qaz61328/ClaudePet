@@ -5,25 +5,33 @@
 
 INPUT=$(cat)
 
-eval "$(echo "$INPUT" | jq -r '@sh "CWD=\(.cwd // "unknown") TOOL=\(.tool_name // "unknown") SESSION_ID=\(.session_id // "")"')"
+CWD=$(echo "$INPUT" | jq -r '.cwd // "unknown"')
+TOOL=$(echo "$INPUT" | jq -r '.tool_name // "unknown"')
+SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // ""')
 PROJECT=$(basename "$CWD")
+
+# Read auth token (if missing, ClaudePet is not running → fall through silently)
+TOKEN_FILE="${TMPDIR%/}/claudepet-token"
+TOKEN=$(cat "$TOKEN_FILE" 2>/dev/null) || exit 0
 
 # Per-project session-allow file (CWD hash prevents cross-project leaking)
 PROJECT_HASH=$(echo -n "$CWD" | md5 -q)
-SESSION_ALLOW="/tmp/claudepet-session-allow-${PROJECT_HASH}"
+SESSION_ALLOW="${TMPDIR%/}/claudepet-session-allow-${PROJECT_HASH}"
 
 # Notify ClaudePet this session is active (non-blocking fire-and-forget)
 if [ -n "$SESSION_ID" ]; then
   curl -s -m 1 -X POST http://127.0.0.1:23987/working \
     -H "Content-Type: application/json" \
-    -d "{\"session\":\"${SESSION_ID}\",\"active\":true}" >/dev/null 2>&1 &
+    -H "X-ClaudePet-Token: ${TOKEN}" \
+    -d "$(jq -n --arg s "$SESSION_ID" --argjson a true '{session:$s,active:$a}')" >/dev/null 2>&1 &
 fi
 
 # AskUserQuestion → notify user to check back, skip authorization flow
 if [ "$TOOL" = "AskUserQuestion" ]; then
   curl -s -m 3 -X POST http://127.0.0.1:23987/notify \
     -H "Content-Type: application/json" \
-    -d "{\"type\":\"ask\",\"project\":\"${PROJECT}\"}" >/dev/null 2>&1
+    -H "X-ClaudePet-Token: ${TOKEN}" \
+    -d "$(jq -n --arg t "ask" --arg p "$PROJECT" '{type:$t,project:$p}')" >/dev/null 2>&1
   exit 0
 fi
 
@@ -31,7 +39,8 @@ fi
 if [ "$TOOL" = "ExitPlanMode" ]; then
   curl -s -m 3 -X POST http://127.0.0.1:23987/notify \
     -H "Content-Type: application/json" \
-    -d "{\"type\":\"plan\",\"project\":\"${PROJECT}\"}" >/dev/null 2>&1
+    -H "X-ClaudePet-Token: ${TOKEN}" \
+    -d "$(jq -n --arg t "plan" --arg p "$PROJECT" '{type:$t,project:$p}')" >/dev/null 2>&1
   exit 0
 fi
 
@@ -97,10 +106,11 @@ if is_auto_allowed "$TOOL" "$TOOL_ARG"; then
 fi
 
 # "Authorize in Terminal" mode → notify pet and let Claude Code handle authorization natively
-if [ -f /tmp/claudepet-passthrough-auth ]; then
+if [ -f "${TMPDIR%/}/claudepet-passthrough-auth" ]; then
   curl -s -m 3 -X POST http://127.0.0.1:23987/notify \
     -H "Content-Type: application/json" \
-    -d "{\"type\":\"terminalAuth\",\"project\":\"${PROJECT}\"}" >/dev/null 2>&1
+    -H "X-ClaudePet-Token: ${TOKEN}" \
+    -d "$(jq -n --arg t "terminalAuth" --arg p "$PROJECT" '{type:$t,project:$p}')" >/dev/null 2>&1
   exit 0
 fi
 
@@ -119,6 +129,7 @@ PAYLOAD=$(jq -n \
 # Synchronously wait for ClaudePet response
 RESPONSE=$(curl -s -m 60 -X POST http://127.0.0.1:23987/authorize \
   -H "Content-Type: application/json" \
+  -H "X-ClaudePet-Token: ${TOKEN}" \
   -d "$PAYLOAD" 2>/dev/null)
 
 if [ $? -eq 0 ] && [ -n "$RESPONSE" ]; then
