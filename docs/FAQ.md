@@ -16,6 +16,18 @@ Enable "Authorize in Terminal" in the status bar menu. ClaudePet will notify you
 
 To allow specific tools permanently, add the authorization rules to `.claude/settings.json` by hand.
 
+### Plan Mode asks for write permission on first use
+
+When Claude enters Plan Mode for the first time in a conversation, it writes a plan file to `.claude/plans/`. Claude Code's permission system prompts for approval before allowing that write.
+
+Add this rule to the `permissions.allow` array in `~/.claude/settings.json`:
+
+```json
+"Write(*/.claude/plans/*)"
+```
+
+Plan files will be auto-allowed after this change.
+
 ## Idle Chatter
 
 ### Why does an Agent run out of nowhere?

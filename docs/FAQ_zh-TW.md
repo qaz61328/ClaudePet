@@ -16,6 +16,18 @@
 
 若想要跨 session 永久允許某些工具，請在 `.claude/settings.json` 中手動添加相應的授權設定。
 
+### Plan Mode 第一次使用會跳出寫入權限確認
+
+每次新對話第一次進入 Plan Mode 時，Claude 需要把計畫寫入 `.claude/plans/` 目錄下的 MD 檔。Claude Code 的權限機制會在第一次寫入時跳出確認。
+
+在 `~/.claude/settings.json` 的 `permissions.allow` 陣列中加入以下規則即可解決：
+
+```json
+"Write(*/.claude/plans/*)"
+```
+
+加入後 Plan Mode 寫入計畫檔不再需要手動確認。
+
 ## 閒聊
 
 ### 為什麼有時候會突然跑 Agent？
