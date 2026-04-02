@@ -1,0 +1,121 @@
+name: Save Traffic Data
+
+on:
+  schedule:
+    # Run daily at 23:50 UTC (GitHub only keeps 14 days, so daily capture is essential)
+    - cron: '50 23 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  save-traffic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: traffic-data
+          fetch-depth: 0
+
+      - name: Fetch traffic data
+        env:
+          GH_TOKEN: ${{ secrets.TRAFFIC_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          YEAR=$(date -u +%Y)
+          mkdir -p "data/${YEAR}"
+
+          # Fetch all traffic endpoints
+          gh api "repos/${REPO}/traffic/clones"             > /tmp/clones.json
+          gh api "repos/${REPO}/traffic/views"              > /tmp/views.json
+          gh api "repos/${REPO}/traffic/popular/referrers"  > /tmp/referrers.json
+          gh api "repos/${REPO}/traffic/popular/paths"      > /tmp/paths.json
+
+          # Combine into a single daily snapshot
+          jq -n \
+            --arg date "$DATE" \
+            --slurpfile clones /tmp/clones.json \
+            --slurpfile views /tmp/views.json \
+            --slurpfile referrers /tmp/referrers.json \
+            --slurpfile paths /tmp/paths.json \
+            '{
+              date: $date,
+              clones: $clones[0],
+              views: $views[0],
+              referrers: $referrers[0],
+              paths: $paths[0]
+            }' > "data/${YEAR}/${DATE}.json"
+
+          echo "Saved traffic snapshot for ${DATE}"
+
+      - name: Update summary
+        run: |
+          # Build a running totals summary from all snapshots
+          python3 - << 'PYEOF'
+          import json, glob, os
+          from collections import defaultdict
+
+          cloners_by_date = {}
+          viewers_by_date = {}
+          all_referrers = defaultdict(lambda: {"views": 0, "unique": 0})
+
+          for f in sorted(glob.glob("data/**/*.json", recursive=True)):
+              with open(f) as fh:
+                  snap = json.load(fh)
+
+              # Deduplicate daily clone/view counts from the 14-day rolling window
+              for c in snap.get("clones", {}).get("clones", []):
+                  day = c["timestamp"][:10]
+                  cloners_by_date[day] = {"total": c["count"], "unique": c["uniques"]}
+              for v in snap.get("views", {}).get("views", []):
+                  day = v["timestamp"][:10]
+                  viewers_by_date[day] = {"total": v["count"], "unique": v["uniques"]}
+
+              for r in snap.get("referrers", []):
+                  all_referrers[r["referrer"]]["views"] += r["count"]
+                  all_referrers[r["referrer"]]["unique"] += r["uniques"]
+
+          total_clones = sum(d["total"] for d in cloners_by_date.values())
+          total_unique = sum(d["unique"] for d in cloners_by_date.values())
+          total_views  = sum(d["total"] for d in viewers_by_date.values())
+          total_uv     = sum(d["unique"] for d in viewers_by_date.values())
+
+          lines = [
+              "# ClaudePet Traffic Summary\n",
+              f"Data range: {min(cloners_by_date.keys(), default='N/A')} ~ {max(cloners_by_date.keys(), default='N/A')}\n",
+              f"## Clones\n",
+              f"- Total: {total_clones}",
+              f"- Unique cloners: {total_unique}\n",
+              f"## Views\n",
+              f"- Total: {total_views}",
+              f"- Unique visitors: {total_uv}\n",
+              f"## Top Referrers\n",
+              "| Site | Views | Unique |",
+              "|------|-------|--------|",
+          ]
+          for ref, data in sorted(all_referrers.items(), key=lambda x: -x[1]["views"]):
+              lines.append(f"| {ref} | {data['views']} | {data['unique']} |")
+
+          lines.append(f"\n## Daily Clones\n")
+          lines.append("| Date | Clones | Unique |")
+          lines.append("|------|--------|--------|")
+          for day in sorted(cloners_by_date.keys()):
+              d = cloners_by_date[day]
+              lines.append(f"| {day} | {d['total']} | {d['unique']} |")
+
+          with open("README.md", "w") as f:
+              f.write("\n".join(lines) + "\n")
+
+          print(f"Summary: {total_clones} clones ({total_unique} unique), {total_views} views ({total_uv} unique)")
+          PYEOF
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          # Only commit if there are changes
+          git diff --staged --quiet || git commit -m "traffic: $(date -u +%Y-%m-%d)"
+          git push
