@@ -119,7 +119,7 @@ See [FAQ.md](docs/FAQ.md) | [繁體中文](docs/FAQ_zh-TW.md)
 
 ## Contributing
 
-This project is built by me and Claude Code together. If you run into any issues, feel free to modify the code yourself or submit a PR.
+This project is built by me and Claude Code together. If you run into any issues, feel free to modify the code yourself or submit a PR. See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 
 ## License
 
