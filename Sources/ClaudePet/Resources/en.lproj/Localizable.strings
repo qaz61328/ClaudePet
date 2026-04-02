@@ -19,6 +19,10 @@
 "v%@ → v%@" = "v%@ → v%@";
 "Pull failed (conflicts?)" = "Pull failed (conflicts?)";
 
+/* Chatter toggle */
+"Idle chatter ON." = "Idle chatter ON. New sessions will auto-chatter.";
+"Idle chatter OFF." = "Idle chatter OFF. New sessions will not auto-chatter.";
+
 /* Keyboard Shortcuts */
 "Keyboard Shortcuts..." = "Keyboard Shortcuts...";
 "Keyboard Shortcuts" = "Keyboard Shortcuts";

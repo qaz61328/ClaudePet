@@ -389,9 +389,77 @@ class PetServer {
 
     static var isChatterEnabled: Bool {
         get {
-            (UserDefaults.standard.object(forKey: chatterEnabledKey) as? Bool) ?? true
+            (UserDefaults.standard.object(forKey: chatterEnabledKey) as? Bool) ?? false
         }
         set { UserDefaults.standard.set(newValue, forKey: chatterEnabledKey) }
+    }
+
+    // MARK: - CLAUDE.md chatter config management
+
+    private static let chatterMarkerStart = "<!-- claudepet-chatter-start -->"
+    private static let chatterMarkerEnd = "<!-- claudepet-chatter-end -->"
+    private static let claudeMDPath = NSHomeDirectory() + "/.claude/CLAUDE.md"
+
+    /// Check if the chatter config block exists in ~/.claude/CLAUDE.md
+    static var isChatterConfigPresent: Bool {
+        guard let content = try? String(contentsOfFile: claudeMDPath, encoding: .utf8) else { return false }
+        return content.contains(chatterMarkerStart)
+    }
+
+    /// Append chatter config block to ~/.claude/CLAUDE.md (with start/end markers)
+    static func addChatterConfig() {
+        let projectPath = PersonaDirectory.projectRoot.path
+        let block = """
+
+        \(chatterMarkerStart)
+        ## ClaudePet Idle Chatter
+
+        At the start of each session, proactively set up an idle chatter schedule using CronCreate:
+        - Cron minute field: randomly pick 3 different minutes (0-59), comma-separated (e.g. `7,31,48 * * * *`). Randomize per session to avoid multiple sessions triggering simultaneously.
+        - prompt: `First run touch $TMPDIR/claudepet-chatter-lock (prevents Stop hook from sending extra "work complete" notifications). Then run curl -s -m 1 http://127.0.0.1:23987/health — if it fails, stop. On success, check the chatterEnabled field in the returned JSON; if false, stop (do not launch subagent). If true, use the Agent tool (model: haiku) to launch a subagent with a prompt that includes: (1) a one-sentence summary of the current conversation and the current time (2) instructions for the subagent to read \(projectPath)/Personas/<persona-id>/chatter-prompt.md (persona ID from the health JSON) and follow all rules therein to decide whether to send idle chatter.`
+        - After sending chatter (whether cron-triggered or spontaneous), do not report the result to the user — complete silently
+        - Additionally, you may spontaneously send chatter at appropriate moments during conversation (no need to wait for cron); spontaneous chatter does not require a subagent or the lock file
+        \(chatterMarkerEnd)
+        """
+
+        guard !isChatterConfigPresent else { return }
+
+        let claudeDir = NSHomeDirectory() + "/.claude"
+        try? FileManager.default.createDirectory(atPath: claudeDir, withIntermediateDirectories: true)
+
+        if let fh = FileHandle(forWritingAtPath: claudeMDPath) {
+            fh.seekToEndOfFile()
+            if let data = block.data(using: .utf8) { fh.write(data) }
+            fh.closeFile()
+        } else {
+            try? block.data(using: .utf8)?.write(to: URL(fileURLWithPath: claudeMDPath))
+        }
+    }
+
+    /// Remove chatter config block from ~/.claude/CLAUDE.md (between start/end markers)
+    static func removeChatterConfig() {
+        guard let content = try? String(contentsOfFile: claudeMDPath, encoding: .utf8) else { return }
+        guard let startRange = content.range(of: chatterMarkerStart),
+              let endRange = content.range(of: chatterMarkerEnd) else { return }
+
+        // Include preceding newlines before the start marker
+        var removeStart = startRange.lowerBound
+        while removeStart > content.startIndex {
+            let prev = content.index(before: removeStart)
+            if content[prev] == "\n" { removeStart = prev } else { break }
+        }
+
+        // Include trailing newline after end marker
+        var removeEnd = endRange.upperBound
+        if removeEnd < content.endIndex && content[removeEnd] == "\n" {
+            removeEnd = content.index(after: removeEnd)
+        }
+
+        var newContent = String(content[..<removeStart]) + String(content[removeEnd...])
+        // Trim excess trailing newlines
+        while newContent.hasSuffix("\n\n\n") { newContent.removeLast() }
+
+        try? newContent.write(toFile: claudeMDPath, atomically: true, encoding: .utf8)
     }
 
     // MARK: - Authorization Mode

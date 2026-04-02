@@ -149,9 +149,11 @@ The character occasionally mumbles to itself, adding life to the desktop.
 
 **Priority**: `authorize > notify > working > chatter > idle`. Chatter always yields. If an auth or notify bubble is showing, the chatter request gets silently dropped.
 
-**Toggle**: Status bar menu "Idle Chatter" toggle (`UserDefaults` key: `chatterEnabled`, on by default).
+**Opt-in**: Idle chatter is disabled by default. Users enable it during `setup.sh` (explicit opt-in) or later via the status bar menu toggle.
 
-**Auto-scheduling**: The global `~/.claude/CLAUDE.md` instructs Claude to set up a chatter cron at the start of every session (project-independent).
+**Toggle**: Status bar menu "Idle Chatter" toggle (`UserDefaults` key: `chatterEnabled`, off by default). Toggling also manages the `~/.claude/CLAUDE.md` chatter config block (add on enable, remove on disable). The pet shows a notification bubble on toggle.
+
+**CLAUDE.md config block**: Wrapped in `<!-- claudepet-chatter-start -->` / `<!-- claudepet-chatter-end -->` markers for safe add/remove. The block instructs Claude to set up a chatter cron at the start of every session (project-independent).
 
 ### Persona System (Multi-Character)
 
@@ -203,10 +205,10 @@ The persona system uses a dual architecture: JSON data-driven with Swift fallbac
 
 ```bash
 bash scripts/setup.sh       # interactive setup (step-by-step confirmation)
-bash scripts/setup.sh --yes # skip confirmation, run everything
+bash scripts/setup.sh --yes # skip confirmation (idle chatter is opt-in, skipped in --yes mode)
 ```
 
-Handles: release build, Claude Code hooks, idle chatter scheduling in `~/.claude/CLAUDE.md`, shell wrapper.
+Handles: release build, Claude Code hooks, idle chatter (opt-in), shell wrapper.
 
 ## Development
 

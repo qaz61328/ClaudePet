@@ -12,7 +12,7 @@
 bash scripts/setup.sh
 ```
 
-The script walks through four steps, asking for confirmation at each one. Pass `--yes` to skip the prompts:
+The script walks through four steps, asking for confirmation at each one. Pass `--yes` to skip the prompts (idle chatter is opt-in and skipped in `--yes` mode):
 
 ```bash
 bash scripts/setup.sh --yes
@@ -22,7 +22,7 @@ What it does:
 
 1. Builds the release binary (`swift build -c release`)
 2. Writes Claude Code hook configuration to `~/.claude/settings.json`
-3. Appends the idle chatter schedule block to `~/.claude/CLAUDE.md`
+3. Asks whether to enable idle chatter (opt-in, default: no). If yes, appends the chatter config block to `~/.claude/CLAUDE.md`
 4. Adds a `claude()` shell wrapper to your RC file (`~/.zshrc` or `~/.bashrc`)
 
 After setup, run `claude` as usual. ClaudePet starts in the background before Claude Code launches.
@@ -60,7 +60,7 @@ Add hooks to `~/.claude/settings.json`. Replace `/path/to/ClaudePet` with your a
     ],
     "PreToolUse": [
       {
-        "matcher": "Read|Bash|Edit|Write|NotebookEdit|AskUserQuestion|ExitPlanMode",
+        "matcher": "Read|Bash|Edit|Write|NotebookEdit|AskUserQuestion|ExitPlanMode|mcp__.*",
         "hooks": [
           {
             "type": "command",
@@ -72,31 +72,35 @@ Add hooks to `~/.claude/settings.json`. Replace `/path/to/ClaudePet` with your a
   },
   "permissions": {
     "allow": [
-      "Bash(curl*127.0.0.1:23987/chatter*)"
+      "Bash(touch*claudepet-chatter-lock*)",
+      "Bash(curl*127.0.0.1:23987*)",
+      "Bash(touch*claudepet-chatter-lock*curl*127.0.0.1:23987*)"
     ]
   }
 }
 ```
 
-The `permissions.allow` entry lets idle chatter send POST requests to ClaudePet without triggering an authorization prompt.
+The `permissions.allow` entries let ClaudePet-related Bash commands (chatter lock file, curl to the local server) run without triggering an authorization prompt.
 
 If you already have a `settings.json`, merge the `hooks` and `permissions` sections into your existing file.
 
-### 3. Idle Chatter Schedule
+### 3. Idle Chatter (Opt-in)
 
-Append this block to `~/.claude/CLAUDE.md`:
+Idle chatter is disabled by default. To enable it, append this block to `~/.claude/CLAUDE.md` (or toggle it on from the status bar menu later):
 
 ```markdown
+<!-- claudepet-chatter-start -->
 ## ClaudePet Idle Chatter
 
 At the start of each session, set up a chatter schedule using CronCreate:
 - Cron minute field: pick 3 random minutes (0-59), comma-separated (e.g. `7,31,48 * * * *`). Randomize per session to avoid multiple sessions firing at the same time.
-- Prompt: `First run touch /tmp/claudepet-chatter-lock (prevents the Stop hook from sending an extra "work complete" notification). Then run curl -s -m 1 http://127.0.0.1:23987/health. If it fails, stop. If it succeeds, check the chatterEnabled field in the response JSON. If false, stop (do not launch subagent). If true, launch a subagent with the Agent tool (model: haiku). The subagent prompt should include: (1) a one-line summary of the current conversation and the current time (2) instructions to read /path/to/ClaudePet/Personas/<persona-id>/chatter-prompt.md (get persona ID from the health JSON) and follow all rules within to decide whether to send chatter.`
+- Prompt: `First run touch $TMPDIR/claudepet-chatter-lock (prevents the Stop hook from sending an extra "work complete" notification). Then run curl -s -m 1 http://127.0.0.1:23987/health. If it fails, stop. If it succeeds, check the chatterEnabled field in the response JSON. If false, stop (do not launch subagent). If true, launch a subagent with the Agent tool (model: haiku). The subagent prompt should include: (1) a one-line summary of the current conversation and the current time (2) instructions to read /path/to/ClaudePet/Personas/<persona-id>/chatter-prompt.md (get persona ID from the health JSON) and follow all rules within to decide whether to send chatter.`
 - After sending chatter (whether cron or spontaneous), do not report the result. Complete silently.
 - You can also send chatter spontaneously when the timing feels right (no cron, no lock file needed).
+<!-- claudepet-chatter-end -->
 ```
 
-Replace `/path/to/ClaudePet` with your actual project path.
+Replace `/path/to/ClaudePet` with your actual project path. The `<!-- claudepet-chatter-start/end -->` markers are required — the status bar menu toggle and upgrade script use them to safely add/remove the block.
 
 ### 4. Shell Wrapper (Auto-Launch)
 
@@ -126,8 +130,8 @@ bash scripts/upgrade.sh
 
 The upgrade script:
 1. Rebuilds the release binary
-2. Updates Claude Code hooks in `~/.claude/settings.json` (removes old entries, writes current ones)
-3. Replaces the idle chatter block in `~/.claude/CLAUDE.md`
+2. Updates Claude Code hooks in `~/.claude/settings.json` (only refreshes hooks that are still present; respects manual removals)
+3. Updates the idle chatter block in `~/.claude/CLAUDE.md` if enabled (skips if chatter was never enabled)
 4. Updates the shell wrapper if the project path changed
 5. Restarts ClaudePet
 
@@ -142,7 +146,7 @@ The script asks for confirmation, then:
 2. Removes ClaudePet hooks and permissions from `~/.claude/settings.json`
 3. Removes the idle chatter block from `~/.claude/CLAUDE.md`
 4. Removes the `claude()` shell wrapper from your RC file
-5. Cleans up temp files (`/tmp/claudepet-*`)
+5. Cleans up temp files (`$TMPDIR/claudepet-*`)
 
 Your other settings in `settings.json` and `CLAUDE.md` are preserved. The script does not delete the repo — do that yourself if you want:
 

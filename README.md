@@ -95,11 +95,12 @@ This removes all ClaudePet environment configs: Claude Code hooks, idle chatter 
 Every character is fully customizable — dialogue, pixel sprites, and sound effects. Build your own or use the built-in default.
 
 <p align="center">
-  <img src="docs/media/claude.png" width="60" />
   <img src="docs/media/cat.png" width="60" />
   <img src="docs/media/milk.png" width="60" />
+  <img src="docs/media/claude.png" width="60" />
   <img src="docs/media/pom.png" width="60" />
   <img src="docs/media/sun.png" width="60" />
+  <img src="docs/media/eel.png" width="60" />
 </p>
 
 The fastest way: run `/create-persona` inside Claude Code. It walks you through character design and generates everything.

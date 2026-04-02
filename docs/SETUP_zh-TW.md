@@ -12,7 +12,7 @@
 bash scripts/setup.sh
 ```
 
-腳本會分四步走，每步都會問你要不要做。不想一個一個確認的話，加 `--yes`：
+腳本會分四步走，每步都會問你要不要做。不想一個一個確認的話，加 `--yes`（閒聊功能是 opt-in，`--yes` 模式下會跳過）：
 
 ```bash
 bash scripts/setup.sh --yes
@@ -22,7 +22,7 @@ bash scripts/setup.sh --yes
 
 1. 編譯 release binary（`swift build -c release`）
 2. 把 Claude Code hook 設定寫進 `~/.claude/settings.json`
-3. 把閒聊排程設定附加到 `~/.claude/CLAUDE.md`
+3. 詢問是否開啟閒聊功能（opt-in，預設不開啟）。選是的話，把閒聊設定附加到 `~/.claude/CLAUDE.md`
 4. 在你的 RC 檔（`~/.zshrc` 或 `~/.bashrc`）加上 `claude()` wrapper
 
 裝完之後照平常一樣跑 `claude`，ClaudePet 會在背景自動啟動。
@@ -60,7 +60,7 @@ Binary 會在 `.build/release/ClaudePet`。不需要外部套件。
     ],
     "PreToolUse": [
       {
-        "matcher": "Read|Bash|Edit|Write|NotebookEdit|AskUserQuestion|ExitPlanMode",
+        "matcher": "Read|Bash|Edit|Write|NotebookEdit|AskUserQuestion|ExitPlanMode|mcp__.*",
         "hooks": [
           {
             "type": "command",
@@ -72,31 +72,35 @@ Binary 會在 `.build/release/ClaudePet`。不需要外部套件。
   },
   "permissions": {
     "allow": [
-      "Bash(curl*127.0.0.1:23987/chatter*)"
+      "Bash(touch*claudepet-chatter-lock*)",
+      "Bash(curl*127.0.0.1:23987*)",
+      "Bash(touch*claudepet-chatter-lock*curl*127.0.0.1:23987*)"
     ]
   }
 }
 ```
 
-`permissions.allow` 那行是讓閒聊功能發 POST 時不用跳授權泡泡。
+`permissions.allow` 這幾行是讓 ClaudePet 相關的 Bash 指令（chatter lock 檔、curl 本地 server）不用跳授權泡泡。
 
 已經有 `settings.json` 的話，把 `hooks` 和 `permissions` 合併進去就好。
 
-### 3. 閒聊排程
+### 3. 閒聊功能（Opt-in）
 
-在 `~/.claude/CLAUDE.md` 末尾加上這段：
+閒聊功能預設關閉。要開啟的話，在 `~/.claude/CLAUDE.md` 末尾加上這段（或之後從狀態列選單開啟）：
 
 ```markdown
+<!-- claudepet-chatter-start -->
 ## ClaudePet Idle Chatter
 
 At the start of each session, set up a chatter schedule using CronCreate:
 - Cron minute field: pick 3 random minutes (0-59), comma-separated (e.g. `7,31,48 * * * *`). Randomize per session to avoid multiple sessions firing at the same time.
-- Prompt: `First run touch /tmp/claudepet-chatter-lock (prevents the Stop hook from sending an extra "work complete" notification). Then run curl -s -m 1 http://127.0.0.1:23987/health. If it fails, stop. If it succeeds, check the chatterEnabled field in the response JSON. If false, stop (do not launch subagent). If true, launch a subagent with the Agent tool (model: haiku). The subagent prompt should include: (1) a one-line summary of the current conversation and the current time (2) instructions to read /path/to/ClaudePet/Personas/<persona-id>/chatter-prompt.md (get persona ID from the health JSON) and follow all rules within to decide whether to send chatter.`
+- Prompt: `First run touch $TMPDIR/claudepet-chatter-lock (prevents the Stop hook from sending an extra "work complete" notification). Then run curl -s -m 1 http://127.0.0.1:23987/health. If it fails, stop. If it succeeds, check the chatterEnabled field in the response JSON. If false, stop (do not launch subagent). If true, launch a subagent with the Agent tool (model: haiku). The subagent prompt should include: (1) a one-line summary of the current conversation and the current time (2) instructions to read /path/to/ClaudePet/Personas/<persona-id>/chatter-prompt.md (get persona ID from the health JSON) and follow all rules within to decide whether to send chatter.`
 - After sending chatter (whether cron or spontaneous), do not report the result. Complete silently.
 - You can also send chatter spontaneously when the timing feels right (no cron, no lock file needed).
+<!-- claudepet-chatter-end -->
 ```
 
-把 `/path/to/ClaudePet` 換成你的實際路徑。
+把 `/path/to/ClaudePet` 換成你的實際路徑。`<!-- claudepet-chatter-start/end -->` 標記是必要的，狀態列選單開關和升級腳本靠這些標記來安全地新增／移除區塊。
 
 ### 4. Shell Wrapper（自動啟動）
 
@@ -126,8 +130,8 @@ bash scripts/upgrade.sh
 
 升級腳本做的事：
 1. 重新編譯 release binary
-2. 更新 `~/.claude/settings.json` 裡的 hooks（移除舊設定，寫入新版）
-3. 替換 `~/.claude/CLAUDE.md` 裡的閒聊排程區塊
+2. 更新 `~/.claude/settings.json` 裡的 hooks（只更新還存在的 hook，不會把手動移除的加回去）
+3. 如果閒聊功能有開啟，更新 `~/.claude/CLAUDE.md` 裡的閒聊設定區塊（沒開過就跳過）
 4. 如果專案路徑有變，更新 shell wrapper
 5. 重啟 ClaudePet
 
@@ -142,7 +146,7 @@ bash scripts/uninstall.sh
 2. 從 `~/.claude/settings.json` 移除 ClaudePet 的 hooks 和 permissions
 3. 從 `~/.claude/CLAUDE.md` 移除閒聊排程區塊
 4. 從 RC 檔移除 `claude()` shell wrapper
-5. 清除暫存檔（`/tmp/claudepet-*`）
+5. 清除暫存檔（`$TMPDIR/claudepet-*`）
 
 其他的 `settings.json` 和 `CLAUDE.md` 設定不受影響。腳本不會刪除 repo，要刪的話自己來：
 

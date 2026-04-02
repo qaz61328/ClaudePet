@@ -30,6 +30,14 @@ confirm() {
   [[ "$answer" =~ ^[Yy] ]]
 }
 
+# Opt-in confirm: --yes does NOT auto-approve (returns 1 = skip)
+confirm_opt_in() {
+  if $AUTO_YES; then return 1; fi
+  printf "${BOLD}$1 [y/N]${NC} "
+  read -r answer
+  [[ "$answer" =~ ^[Yy] ]]
+}
+
 ok()   { printf "  ${GREEN}✓${NC} %s\n" "$1"; }
 skip() { printf "  ${YELLOW}→${NC} %s (already exists, skipped)\n" "$1"; }
 fail() { printf "  ${RED}✗${NC} %s\n" "$1"; exit 1; }
@@ -106,7 +114,9 @@ else
   },
   "permissions": {
     "allow": [
-      "Bash(curl*127.0.0.1:23987/chatter*)"
+      "Bash(touch*claudepet-chatter-lock*)",
+      "Bash(curl*127.0.0.1:23987*)",
+      "Bash(touch*claudepet-chatter-lock*curl*127.0.0.1:23987*)"
     ]
   }
 }
@@ -136,32 +146,36 @@ echo
 # ══════════════════════════════════════════════════════
 # Step 3: Idle chatter schedule → ~/.claude/CLAUDE.md
 # ══════════════════════════════════════════════════════
-printf "${BOLD}[3/4] Configure idle chatter schedule (CLAUDE.md)${NC}\n"
+printf "${BOLD}[3/4] Configure idle chatter (CLAUDE.md)${NC}\n"
+printf "  ${YELLOW}Note${NC}: This feature sets up a cron job that triggers every ~20 minutes.\n"
+printf "  Each trigger uses a small amount of tokens (Haiku sub-agent).\n"
 
 CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
 
 CHATTER_BLOCK=$(cat <<CHATTEREOF
 
+<!-- claudepet-chatter-start -->
 ## ClaudePet Idle Chatter
 
 At the start of each session, proactively set up an idle chatter schedule using CronCreate:
 - Cron minute field: randomly pick 3 different minutes (0-59), comma-separated (e.g. \`7,31,48 * * * *\`). Randomize per session to avoid multiple sessions triggering simultaneously.
-- prompt: \`First run touch /tmp/claudepet-chatter-lock (prevents Stop hook from sending extra "work complete" notifications). Then run curl -s -m 1 http://127.0.0.1:23987/health — if it fails, stop. On success, check the chatterEnabled field in the returned JSON; if false, stop (do not launch subagent). If true, use the Agent tool (model: haiku) to launch a subagent with a prompt that includes: (1) a one-sentence summary of the current conversation and the current time (2) instructions for the subagent to read ${PROJECT_DIR}/Personas/<persona-id>/chatter-prompt.md (persona ID from the health JSON) and follow all rules therein to decide whether to send idle chatter.\`
+- prompt: \`First run touch \$TMPDIR/claudepet-chatter-lock (prevents Stop hook from sending extra "work complete" notifications). Then run curl -s -m 1 http://127.0.0.1:23987/health — if it fails, stop. On success, check the chatterEnabled field in the returned JSON; if false, stop (do not launch subagent). If true, use the Agent tool (model: haiku) to launch a subagent with a prompt that includes: (1) a one-sentence summary of the current conversation and the current time (2) instructions for the subagent to read ${PROJECT_DIR}/Personas/<persona-id>/chatter-prompt.md (persona ID from the health JSON) and follow all rules therein to decide whether to send idle chatter.\`
 - After sending chatter (whether cron-triggered or spontaneous), do not report the result to the user — complete silently
 - Additionally, you may spontaneously send chatter at appropriate moments during conversation (no need to wait for cron); spontaneous chatter does not require a subagent or the lock file
+<!-- claudepet-chatter-end -->
 CHATTEREOF
 )
 
-if [ -f "$CLAUDE_MD" ] && grep -q "ClaudePet Idle Chatter" "$CLAUDE_MD" 2>/dev/null; then
+if [ -f "$CLAUDE_MD" ] && grep -q "claudepet-chatter-start" "$CLAUDE_MD" 2>/dev/null; then
   skip "idle chatter"
   SUMMARY+=("→ Idle chatter already configured")
 else
-  if confirm "  Append chatter config to ${CLAUDE_MD}?"; then
+  if confirm_opt_in "  Enable idle chatter? (uses tokens, default: no)"; then
     echo "$CHATTER_BLOCK" >> "$CLAUDE_MD"
     ok "Chatter config written to $CLAUDE_MD"
     SUMMARY+=("✓ Configured idle chatter")
   else
-    SUMMARY+=("→ Skipped idle chatter")
+    SUMMARY+=("→ Skipped idle chatter (can enable later via status bar menu)")
   fi
 fi
 echo

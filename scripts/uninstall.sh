@@ -65,7 +65,7 @@ if [ -f "$SETTINGS_FILE" ]; then
       | if (.hooks.PreToolUse // []) | length == 0 then del(.hooks.PreToolUse) else . end
       | if (.hooks // {}) | length == 0 then del(.hooks) else . end
       # Remove ClaudePet permission entry
-      | (.permissions.allow // []) |= map(select(test("23987/chatter") | not))
+      | (.permissions.allow // []) |= map(select(test("23987|claudepet-chatter-lock") | not))
       | if (.permissions.allow // []) | length == 0 then del(.permissions.allow) else . end
       | if (.permissions // {}) | length == 0 then del(.permissions) else . end
     ' "$SETTINGS_FILE")
@@ -86,13 +86,8 @@ printf "${BOLD}[3/5] Removing idle chatter config from CLAUDE.md...${NC}\n"
 
 CLAUDE_MD="$HOME/.claude/CLAUDE.md"
 
-if [ -f "$CLAUDE_MD" ] && grep -q "ClaudePet Idle Chatter" "$CLAUDE_MD" 2>/dev/null; then
-  awk '
-    /^## ClaudePet Idle Chatter/ { skip=1; next }
-    skip && /^## / { skip=0 }
-    !skip { buf = buf $0 "\n" }
-    END { sub(/\n+$/, "\n", buf); printf "%s", buf }
-  ' "$CLAUDE_MD" > "${CLAUDE_MD}.tmp" && mv "${CLAUDE_MD}.tmp" "$CLAUDE_MD"
+if [ -f "$CLAUDE_MD" ] && grep -q "claudepet-chatter-start" "$CLAUDE_MD" 2>/dev/null; then
+  sed -i '' '/<!-- claudepet-chatter-start -->/,/<!-- claudepet-chatter-end -->/d' "$CLAUDE_MD"
   ok "Chatter config removed from $CLAUDE_MD"
 else
   ok "No chatter config found (nothing to remove)"

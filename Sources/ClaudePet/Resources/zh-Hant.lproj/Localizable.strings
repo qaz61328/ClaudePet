@@ -19,6 +19,10 @@
 "v%@ → v%@" = "v%@ → v%@";
 "Pull failed (conflicts?)" = "拉取失敗（有衝突？）";
 
+/* Chatter toggle */
+"Idle chatter ON." = "閒聊功能已開啟！新的對話將自動開始閒聊";
+"Idle chatter OFF." = "閒聊功能已關閉，新的對話將不會開始閒聊";
+
 /* Keyboard Shortcuts */
 "Keyboard Shortcuts..." = "快捷鍵設定⋯";
 "Keyboard Shortcuts" = "快捷鍵設定";
