@@ -23,6 +23,10 @@
 "Idle chatter ON." = "閒聊功能已開啟！新的對話將自動開始閒聊";
 "Idle chatter OFF." = "閒聊功能已關閉，新的對話將不會開始閒聊";
 
+/* Auth mode toggle */
+"Authorize in Terminal ON." = "終端機授權模式已開啟，授權由終端機處理";
+"Authorize in Terminal OFF." = "終端機授權模式已關閉，授權由小幫手通知";
+
 /* Keyboard Shortcuts */
 "Keyboard Shortcuts..." = "快捷鍵設定⋯";
 "Keyboard Shortcuts" = "快捷鍵設定";

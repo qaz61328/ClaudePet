@@ -191,6 +191,11 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
 
     @objc private func toggleAuthMode() {
         PetServer.isTerminalAuthMode.toggle()
+        if PetServer.isTerminalAuthMode {
+            showBubble(L("Authorize in Terminal ON."))
+        } else {
+            showBubble(L("Authorize in Terminal OFF."))
+        }
     }
 
     // MARK: - Keyboard Shortcuts Preferences

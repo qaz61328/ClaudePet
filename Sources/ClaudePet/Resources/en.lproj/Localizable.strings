@@ -23,6 +23,10 @@
 "Idle chatter ON." = "Idle chatter ON. New sessions will auto-chatter.";
 "Idle chatter OFF." = "Idle chatter OFF. New sessions will not auto-chatter.";
 
+/* Auth mode toggle */
+"Authorize in Terminal ON." = "Terminal auth ON. Permissions handled in terminal.";
+"Authorize in Terminal OFF." = "Terminal auth OFF. Permissions handled by ClaudePet.";
+
 /* Keyboard Shortcuts */
 "Keyboard Shortcuts..." = "Keyboard Shortcuts...";
 "Keyboard Shortcuts" = "Keyboard Shortcuts";
