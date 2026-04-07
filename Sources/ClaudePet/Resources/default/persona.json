@@ -162,19 +162,5 @@
       "{project} strategy is set, ready for review",
       "{project} action plan ready, awaiting your go"
     ]
-  },
-  "checkTerminalAuth": {
-    "generic": [
-      "Authorization needed — waiting on you",
-      "Permission request incoming",
-      "Need your approval on this one",
-      "Got a permission request for you"
-    ],
-    "withProject": [
-      "{project} needs your authorization",
-      "Permission request for {project}",
-      "{project} is waiting for your approval",
-      "Got a {project} permission request for you"
-    ]
   }
 }

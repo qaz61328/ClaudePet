@@ -163,7 +163,6 @@ struct PersonaData: Codable {
     let switchToTerminal: [String]
     let needsAttention: ProjectDialogue
     let planReady: ProjectDialogue
-    let checkTerminalAuth: ProjectDialogue?
 }
 
 // MARK: - Data-Driven Persona
@@ -246,13 +245,6 @@ struct DataDrivenPersona: Persona {
 
     func planReady(project: String?) -> String {
         selectProjectLine(from: data.planReady, project: project)
-    }
-
-    func checkTerminalAuth(project: String?) -> String {
-        guard let dialogue = data.checkTerminalAuth else {
-            return DefaultPersona().checkTerminalAuth(project: project)
-        }
-        return selectProjectLine(from: dialogue, project: project)
     }
 
     /// Select a line from ProjectDialogue; uses withProject template with {project} replacement when project name exists

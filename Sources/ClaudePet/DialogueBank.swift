@@ -65,7 +65,6 @@ protocol Persona {
     func switchToTerminal() -> String
     func needsAttention(project: String?) -> String
     func planReady(project: String?) -> String
-    func checkTerminalAuth(project: String?) -> String
 }
 
 // MARK: - Default Fallback Persona (safety net when JSON loading fails)
@@ -106,11 +105,6 @@ struct DefaultPersona: Persona {
     func planReady(project: String?) -> String {
         guard let p = project, !p.isEmpty else { return "Plan is ready for review" }
         return "\(p) plan is ready"
-    }
-
-    func checkTerminalAuth(project: String?) -> String {
-        guard let p = project, !p.isEmpty else { return "Authorization needed\nWaiting for your decision" }
-        return "\(p) needs authorization\nWaiting for your decision"
     }
 }
 
@@ -202,7 +196,4 @@ enum DialogueBank {
         current.planReady(project: project)
     }
 
-    static func checkTerminalAuth(project: String?) -> String {
-        current.checkTerminalAuth(project: project)
-    }
 }

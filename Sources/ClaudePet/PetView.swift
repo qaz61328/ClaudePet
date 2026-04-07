@@ -376,10 +376,6 @@ class PetView: NSView {
         } else if payload.type == "plan" {
             text = DialogueBank.planReady(project: payload.project)
             style = .plan
-        } else if payload.type == "terminalAuth" {
-            text = DialogueBank.checkTerminalAuth(project: payload.project)
-            style = .attention
-            effectiveSound = .authorize
         } else {
             text = DialogueBank.taskComplete(project: payload.project)
             style = .normal

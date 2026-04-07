@@ -44,6 +44,11 @@ if [ "$TOOL" = "ExitPlanMode" ]; then
   exit 0
 fi
 
+# "Authorize in Terminal" mode → let Claude Code handle authorization natively (no pet bubble)
+if [ -f "${TMPDIR%/}/claudepet-passthrough-auth" ]; then
+  exit 0
+fi
+
 # Tool already in "always allow" list → pass through, no bubble
 if [ -f "$SESSION_ALLOW" ] && grep -qx "$TOOL" "$SESSION_ALLOW"; then
   echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'
@@ -102,15 +107,6 @@ is_auto_allowed() {
 }
 
 if is_auto_allowed "$TOOL" "$TOOL_ARG"; then
-  exit 0
-fi
-
-# "Authorize in Terminal" mode → notify pet and let Claude Code handle authorization natively
-if [ -f "${TMPDIR%/}/claudepet-passthrough-auth" ]; then
-  curl -s -m 3 -X POST http://127.0.0.1:23987/notify \
-    -H "Content-Type: application/json" \
-    -H "X-ClaudePet-Token: ${TOKEN}" \
-    -d "$(jq -n --arg t "terminalAuth" --arg p "$PROJECT" '{type:$t,project:$p}')" >/dev/null 2>&1
   exit 0
 fi
 

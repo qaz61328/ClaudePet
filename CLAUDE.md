@@ -25,7 +25,6 @@ Resources/
 
 ```
 idle/working --(click)--> bow -> talking -> restingState*
-             --(/notify)--> talking -> restingState*
              --(/notify type=ask)--> talking -> restingState* (AskUserQuestion notification)
              --(/notify type=plan)--> talking -> restingState* (Plan Mode plan ready)
              --(/chatter)--> talking -> restingState* (idle chatter, no sound, 3.5s; discarded if auth/notify showing)
@@ -50,7 +49,7 @@ All POST endpoints require auth token (`X-ClaudePet-Token` header) and Host head
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | Returns `{"status":"ok","version":"<ver>","persona":"<id>","activeSessions":<n>,"chatterEnabled":<bool>,"terminalAuthMode":<bool>}` |
-| POST | `/notify` | Notification. Returns 200 immediately. `type` field: `"ask"`, `"plan"`, `"terminalAuth"` |
+| POST | `/notify` | Notification. Returns 200 immediately. `type` field: `"ask"`, `"plan"` |
 | POST | `/authorize` | Authorization request. Holds connection until user clicks. 60-second timeout. |
 | POST | `/chatter` | Idle chatter (no sound). Body: `{"message":"..."}`. Silently discarded if auth/notify showing. |
 | POST | `/working` | Session work state. Body: `{"session":"<uuid>","active":true/false}`. 3-minute auto-expiry. |
@@ -74,9 +73,9 @@ Integrates with Claude Code's [hook system](https://docs.anthropic.com/en/docs/c
 **PreToolUse hook** (`notify-permission.sh`):
 1. POST `/working` (active=true) fire-and-forget
 2. `AskUserQuestion` → POST `/notify` (type=ask); `ExitPlanMode` → POST `/notify` (type=plan)
-3. Check session-allow list (tools "always allowed" pass through). File: `$TMPDIR/claudepet-session-allow-<md5(CWD)>`
-4. Check `permissions.allow` from Claude Code settings (global/project/local) — matching patterns exit 0 silently
-5. **Authorize in Terminal** mode → POST `/notify` (type=terminalAuth), exit 0
+3. **Authorize in Terminal** mode → exit 0 silently (no pet bubble, Claude Code handles auth natively)
+4. Check session-allow list (tools "always allowed" pass through). File: `$TMPDIR/claudepet-session-allow-<md5(CWD)>`
+5. Check `permissions.allow` from Claude Code settings (global/project/local) — matching patterns exit 0 silently
 6. **Pet auth mode** (default) → POST `/authorize` for interactive bubble
 
 Two auth modes switchable via status bar menu. Persisted in UserDefaults, synced to `$TMPDIR/claudepet-passthrough-auth` file flag.
