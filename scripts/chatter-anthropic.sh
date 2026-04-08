@@ -8,13 +8,8 @@ set -euo pipefail
 [ -z "${CHATTER_PROMPT_PATH:-}" ] && exit 1
 [ ! -f "$CHATTER_PROMPT_PATH" ] && exit 1
 
-# Read credentials from ~/.claude/settings.json if not in environment
-SETTINGS="$HOME/.claude/settings.json"
-if [ -z "${ANTHROPIC_API_KEY:-}" ] && [ -z "${ANTHROPIC_AUTH_TOKEN:-}" ] && [ -f "$SETTINGS" ]; then
-  ANTHROPIC_AUTH_TOKEN=$(jq -r '.env.ANTHROPIC_AUTH_TOKEN // empty' "$SETTINGS" 2>/dev/null)
-  ANTHROPIC_BASE_URL=$(jq -r '.env.ANTHROPIC_BASE_URL // empty' "$SETTINGS" 2>/dev/null)
-  ANTHROPIC_MODEL=$(jq -r '.env.ANTHROPIC_DEFAULT_HAIKU_MODEL // .env.ANTHROPIC_DEFAULT_SONNET_MODEL // empty' "$SETTINGS" 2>/dev/null)
-fi
+# Credentials are expected in env vars, exported by generate-chatter.sh
+# (ANTHROPIC_API_KEY or ANTHROPIC_AUTH_TOKEN, plus optional ANTHROPIC_BASE_URL/ANTHROPIC_MODEL)
 
 # Determine auth header
 AUTH_HEADER=""

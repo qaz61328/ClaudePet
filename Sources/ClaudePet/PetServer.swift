@@ -407,6 +407,14 @@ class PetServer {
         set { UserDefaults.standard.set(newValue, forKey: chatterEnabledKey) }
     }
 
+    private static let chatterProviderKey = "chatterProvider"
+
+    /// Chatter provider override: "" = auto-detect, "anthropic", "bedrock", "claude-cli"
+    static var chatterProvider: String {
+        get { UserDefaults.standard.string(forKey: chatterProviderKey) ?? "" }
+        set { UserDefaults.standard.set(newValue, forKey: chatterProviderKey) }
+    }
+
     // MARK: - Idle Chatter Generation (pluggable script)
 
     /// Recent work contexts from /working endpoint (preserved across idle for chatter reference)
@@ -446,7 +454,7 @@ class PetServer {
         chatterTimer = nil
     }
 
-    private static let chatterScriptQueue = DispatchQueue(label: "com.claudepet.chatter-script", qos: .utility)
+    private nonisolated static let chatterScriptQueue = DispatchQueue(label: "com.claudepet.chatter-script", qos: .utility)
 
     private static let iso8601Formatter: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
@@ -475,6 +483,7 @@ class PetServer {
         let timeStr = Self.iso8601Formatter.string(from: Date())
         let token = Self.authToken
         let recent = recentChatter
+        let provider = Self.chatterProvider
 
         Task.detached { [weak self] in
             let result = await Self.runChatterScript(
@@ -484,7 +493,8 @@ class PetServer {
                 personaID: personaID,
                 time: timeStr,
                 authToken: token,
-                recentChatter: recent
+                recentChatter: recent,
+                provider: provider
             )
             await MainActor.run { [weak self] in
                 guard let self else {
@@ -547,7 +557,8 @@ class PetServer {
         personaID: String,
         time: String,
         authToken: String,
-        recentChatter: [String]
+        recentChatter: [String],
+        provider: String
     ) async -> String? {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/bash")
@@ -561,6 +572,9 @@ class PetServer {
         env["CHATTER_TIME"] = time
         env["CLAUDEPET_TOKEN"] = authToken
         env["CHATTER_RECENT"] = recentChatter.joined(separator: "\n")
+        if !provider.isEmpty {
+            env["CHATTER_PROVIDER"] = provider
+        }
         process.environment = env
 
         let pipe = Pipe()
