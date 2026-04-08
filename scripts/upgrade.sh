@@ -66,6 +66,16 @@ HOOKS_JSON=$(cat <<HOOKEOF
     ],
     "PreToolUse": [
       {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$PROJECT_DIR/hooks/notify-working.sh",
+            "async": true
+          }
+        ]
+      },
+      {
         "matcher": "Read|Bash|Edit|Write|NotebookEdit|AskUserQuestion|ExitPlanMode|mcp__.*",
         "hooks": [
           {
@@ -74,13 +84,6 @@ HOOKS_JSON=$(cat <<HOOKEOF
           }
         ]
       }
-    ]
-  },
-  "permissions": {
-    "allow": [
-      "Bash(touch*claudepet-chatter-lock*)",
-      "Bash(curl*127.0.0.1:23987*)",
-      "Bash(touch*claudepet-chatter-lock*curl*127.0.0.1:23987*)"
     ]
   }
 }
@@ -94,7 +97,6 @@ if [ -f "$SETTINGS_FILE" ]; then
     # Save presence flags before removal
     ((.hooks.Stop // []) | any(.hooks[]?; .command | test($projdir; "x"))) as $hadStop
     | ((.hooks.PreToolUse // []) | any(.hooks[]?; .command | test($projdir; "x"))) as $hadPTU
-    | ((.permissions.allow // []) | any(test("23987|claudepet-chatter-lock"))) as $hadPerm
     # Remove old ClaudePet entries
     | (.hooks.Stop // []) |= map(
         .hooks |= map(select(.command | test($projdir; "x") | not))
@@ -104,17 +106,13 @@ if [ -f "$SETTINGS_FILE" ]; then
         .hooks |= map(select(.command | test($projdir; "x") | not))
         | select(.hooks | length > 0)
       )
-    | (.permissions.allow // []) |= map(select(test("23987|claudepet-chatter-lock") | not))
     # Re-add only components that were present
     | if $hadStop then .hooks.Stop = ((.hooks.Stop // []) + ($new.hooks.Stop // [])) else . end
     | if $hadPTU then .hooks.PreToolUse = ((.hooks.PreToolUse // []) + ($new.hooks.PreToolUse // [])) else . end
-    | if $hadPerm then .permissions.allow = ((.permissions.allow // []) + ($new.permissions.allow // []) | unique) else . end
     # Clean up empty arrays
     | if (.hooks.Stop // []) | length == 0 then del(.hooks.Stop) else . end
     | if (.hooks.PreToolUse // []) | length == 0 then del(.hooks.PreToolUse) else . end
     | if (.hooks // {}) | length == 0 then del(.hooks) else . end
-    | if (.permissions.allow // []) | length == 0 then del(.permissions.allow) else . end
-    | if (.permissions // {}) | length == 0 then del(.permissions) else . end
   ' "$SETTINGS_FILE")
   echo "$MERGED" > "${SETTINGS_FILE}.tmp" && mv "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE"
   ok "Hooks refreshed in $SETTINGS_FILE (respects manual removals)"
@@ -125,33 +123,16 @@ fi
 echo
 
 # ══════════════════════════════════════════════════════
-# Step 3: Update idle chatter → ~/.claude/CLAUDE.md
+# Step 3: Update idle chatter
 # ══════════════════════════════════════════════════════
-printf "${BOLD}[3/4] Updating idle chatter config...${NC}\n"
+printf "${BOLD}[3/4] Updating idle chatter...${NC}\n"
 
-CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
-
-CHATTER_BLOCK=$(cat <<CHATTEREOF
-
-<!-- claudepet-chatter-start -->
-## ClaudePet Idle Chatter
-
-At the start of each session, proactively set up an idle chatter schedule using CronCreate:
-- Cron minute field: randomly pick 3 different minutes (0-59), comma-separated (e.g. \`7,31,48 * * * *\`). Randomize per session to avoid multiple sessions triggering simultaneously.
-- prompt: \`First run touch \$TMPDIR/claudepet-chatter-lock (prevents Stop hook from sending extra "work complete" notifications). Then run curl -s -m 1 http://127.0.0.1:23987/health — if it fails, stop. On success, check the chatterEnabled field in the returned JSON; if false, stop (do not launch subagent). If true, use the Agent tool (model: haiku) to launch a subagent with a prompt that includes: (1) a one-sentence summary of the current conversation and the current time (2) instructions for the subagent to read ${PROJECT_DIR}/Personas/<persona-id>/chatter-prompt.md (persona ID from the health JSON) and follow all rules therein to decide whether to send idle chatter.\`
-- After sending chatter (whether cron-triggered or spontaneous), do not report the result to the user — complete silently
-- Additionally, you may spontaneously send chatter at appropriate moments during conversation (no need to wait for cron); spontaneous chatter does not require a subagent or the lock file
-<!-- claudepet-chatter-end -->
-CHATTEREOF
-)
-
-if [ -f "$CLAUDE_MD" ] && grep -q "claudepet-chatter-start" "$CLAUDE_MD" 2>/dev/null; then
-  # User has chatter enabled — update to latest version
-  sed -i '' '/<!-- claudepet-chatter-start -->/,/<!-- claudepet-chatter-end -->/d' "$CLAUDE_MD"
-  echo "$CHATTER_BLOCK" >> "$CLAUDE_MD"
-  ok "Chatter config updated in $CLAUDE_MD"
+# Ensure chatter scripts are executable
+CHATTER_SCRIPT="$PROJECT_DIR/scripts/generate-chatter.sh"
+if [ -x "$CHATTER_SCRIPT" ]; then
+  ok "Chatter script ready"
 else
-  ok "Idle chatter not enabled (skipped — enable via status bar menu)"
+  chmod +x "$CHATTER_SCRIPT" 2>/dev/null && ok "Made generate-chatter.sh executable" || true
 fi
 echo
 

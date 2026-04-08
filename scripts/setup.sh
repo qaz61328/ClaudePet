@@ -1,6 +1,6 @@
 #!/bin/bash
 # ClaudePet Setup Script
-# One-command environment setup: build → hooks → CLAUDE.md → shell wrapper
+# One-command environment setup: build → hooks → chatter → shell wrapper
 # Usage: bash scripts/setup.sh [--yes]
 
 set -euo pipefail
@@ -121,23 +121,19 @@ else
         ]
       }
     ]
-  },
-  "permissions": {
-    "allow": []
   }
 }
 HOOKEOF
 )
 
     if [ -f "$SETTINGS_FILE" ]; then
-      # Merge into existing settings (deep merge hooks, dedupe permissions.allow)
+      # Merge into existing settings (deep merge hooks)
       MERGED=$(jq -s '
         .[0] as $existing | .[1] as $new |
         $existing
         | .hooks = (($existing.hooks // {}) * $new.hooks)
-        | .permissions.allow = (($existing.permissions.allow // []) + ($new.permissions.allow // []) | unique)
       ' "$SETTINGS_FILE" <(echo "$HOOKS_JSON"))
-      echo "$MERGED" > "$SETTINGS_FILE"
+      echo "$MERGED" > "${SETTINGS_FILE}.tmp" && mv "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE"
     else
       echo "$HOOKS_JSON" > "$SETTINGS_FILE"
     fi
@@ -156,16 +152,6 @@ printf "${BOLD}[3/4] Configure idle chatter${NC}\n"
 printf "  Idle chatter uses an external LLM to generate short persona-flavored lines.\n"
 printf "  ClaudePet detects idle time and runs a script to call the API.\n"
 printf "  Enable/disable via the status bar menu toggle.\n"
-
-# Clean up legacy CLAUDE.md chatter config if present
-CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
-if [ -f "$CLAUDE_MD" ] && grep -q "claudepet-chatter-start" "$CLAUDE_MD" 2>/dev/null; then
-  # Remove the legacy block between markers
-  sed -i '' '/<!-- claudepet-chatter-start -->/,/<!-- claudepet-chatter-end -->/d' "$CLAUDE_MD"
-  # Trim excess blank lines
-  sed -i '' -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$CLAUDE_MD"
-  ok "Removed legacy chatter config from CLAUDE.md"
-fi
 
 CHATTER_SCRIPT="$PROJECT_DIR/scripts/generate-chatter.sh"
 if [ -x "$CHATTER_SCRIPT" ]; then

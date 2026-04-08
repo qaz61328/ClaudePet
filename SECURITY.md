@@ -27,7 +27,7 @@ ClaudePet runs locally on macOS. The main security-relevant areas are:
 
 - **HTTP server** (`127.0.0.1:23987`): Bound to localhost only. POST endpoints require an auth token (`X-ClaudePet-Token` header) and validate the Host header to prevent DNS rebinding.
 - **Auth token**: UUID generated per launch, stored in `$TMPDIR/claudepet-token` with mode `0600`. Used by hook scripts to authenticate requests.
-- **Temp files**: All temp files (`claudepet-token`, `claudepet-session-allow-*`, `claudepet-passthrough-auth`, `claudepet-chatter-lock`) are stored in `$TMPDIR` (macOS per-user directory, not world-accessible).
+- **Temp files**: All temp files (`claudepet-token`, `claudepet-session-allow-*`, `claudepet-passthrough-auth`) are stored in `$TMPDIR` (macOS per-user directory, not world-accessible).
 - **Hook scripts**: Shell scripts that pass data to the HTTP server. All JSON payloads are assembled with `jq -n --arg` to prevent injection.
 
 ## Out of Scope

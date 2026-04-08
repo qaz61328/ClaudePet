@@ -33,7 +33,7 @@ echo
 # ══════════════════════════════════════════════════════
 # Step 1: Stop ClaudePet
 # ══════════════════════════════════════════════════════
-printf "${BOLD}[1/5] Stopping ClaudePet...${NC}\n"
+printf "${BOLD}[1/4] Stopping ClaudePet...${NC}\n"
 if pkill -f ".build/release/ClaudePet" 2>/dev/null; then
   ok "ClaudePet process stopped"
 else
@@ -44,7 +44,7 @@ echo
 # ══════════════════════════════════════════════════════
 # Step 2: Remove hooks from ~/.claude/settings.json
 # ══════════════════════════════════════════════════════
-printf "${BOLD}[2/5] Removing hooks from settings.json...${NC}\n"
+printf "${BOLD}[2/4] Removing hooks from settings.json...${NC}\n"
 
 SETTINGS_FILE="$HOME/.claude/settings.json"
 
@@ -64,10 +64,6 @@ if [ -f "$SETTINGS_FILE" ]; then
       | if (.hooks.Stop // []) | length == 0 then del(.hooks.Stop) else . end
       | if (.hooks.PreToolUse // []) | length == 0 then del(.hooks.PreToolUse) else . end
       | if (.hooks // {}) | length == 0 then del(.hooks) else . end
-      # Remove ClaudePet permission entry
-      | (.permissions.allow // []) |= map(select(test("23987|claudepet-chatter-lock") | not))
-      | if (.permissions.allow // []) | length == 0 then del(.permissions.allow) else . end
-      | if (.permissions // {}) | length == 0 then del(.permissions) else . end
     ' "$SETTINGS_FILE")
     echo "$CLEANED" > "${SETTINGS_FILE}.tmp" && mv "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE"
     ok "Hooks removed from $SETTINGS_FILE"
@@ -80,24 +76,9 @@ fi
 echo
 
 # ══════════════════════════════════════════════════════
-# Step 3: Remove chatter section from ~/.claude/CLAUDE.md
+# Step 3: Remove shell wrapper from RC file
 # ══════════════════════════════════════════════════════
-printf "${BOLD}[3/5] Removing idle chatter config from CLAUDE.md...${NC}\n"
-
-CLAUDE_MD="$HOME/.claude/CLAUDE.md"
-
-if [ -f "$CLAUDE_MD" ] && grep -q "claudepet-chatter-start" "$CLAUDE_MD" 2>/dev/null; then
-  sed -i '' '/<!-- claudepet-chatter-start -->/,/<!-- claudepet-chatter-end -->/d' "$CLAUDE_MD"
-  ok "Chatter config removed from $CLAUDE_MD"
-else
-  ok "No chatter config found (nothing to remove)"
-fi
-echo
-
-# ══════════════════════════════════════════════════════
-# Step 4: Remove shell wrapper from RC file
-# ══════════════════════════════════════════════════════
-printf "${BOLD}[4/5] Removing shell wrapper...${NC}\n"
+printf "${BOLD}[3/4] Removing shell wrapper...${NC}\n"
 
 case "${SHELL:-/bin/zsh}" in
   */zsh)  RC_FILE="$HOME/.zshrc" ;;
@@ -115,10 +96,10 @@ fi
 echo
 
 # ══════════════════════════════════════════════════════
-# Step 5: Clean up temp files
+# Step 4: Clean up temp files
 # ══════════════════════════════════════════════════════
-printf "${BOLD}[5/5] Cleaning up temp files...${NC}\n"
-rm -f /tmp/claudepet-session-allow-* /tmp/claudepet-chatter-lock
+printf "${BOLD}[4/4] Cleaning up temp files...${NC}\n"
+rm -f "${TMPDIR%/}/claudepet-token" "${TMPDIR%/}/claudepet-passthrough-auth" "${TMPDIR%/}"/claudepet-session-allow-*
 ok "Temp files cleaned"
 echo
 
