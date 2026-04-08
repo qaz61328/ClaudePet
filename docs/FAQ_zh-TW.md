@@ -32,14 +32,14 @@
 
 ### 閒聊功能怎麼運作的？
 
-ClaudePet 偵測到所有 Claude Code session 結束後，等一段時間（約 5 分鐘加隨機偏移），跑外部 shell script 呼叫 LLM API 產生一句符合角色的閒聊。腳本會自動偵測可用 provider：Anthropic API、AWS Bedrock、Ollama。
+ClaudePet 偵測到所有 Claude Code session 結束後，等一段時間（約 5 分鐘加隨機偏移），跑外部 shell script 呼叫 LLM 產生一句符合角色的閒聊。腳本會自動偵測可用 provider：Anthropic API、AWS Bedrock、Claude Code CLI（`claude -p --bare`）。
 
 整個過程在 ClaudePet 程序內完成，不會跑 Claude Code subagent、不建 cron job、終端機不會有任何輸出。
 
 ### 閒聊功能沒反應
 
 1. 從狀態列選單開啟「閒聊模式」（預設關閉）
-2. 確認有可用的 LLM provider（`ANTHROPIC_API_KEY` 有設、AWS CLI 有設好、或 Ollama 在跑）
+2. 確認有可用的 LLM provider（`ANTHROPIC_API_KEY` 有設、AWS CLI 有設好、或 `claude` CLI 有裝）
 3. 閒聊只在所有 Claude Code session 結束後等約 5 分鐘才觸發
 4. 確認 `scripts/generate-chatter.sh` 有執行權限（`chmod +x scripts/generate-chatter.sh`）
 

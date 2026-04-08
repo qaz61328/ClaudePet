@@ -88,7 +88,7 @@ Two auth modes switchable via status bar menu. Persisted in UserDefaults, synced
 - **Generation**: Pluggable shell script (`scripts/generate-chatter.sh`) calls LLM API with persona prompt + work context → returns one line of text
 - **Script env vars**: `CHATTER_PROMPT_PATH`, `CHATTER_CONTEXT`, `CHATTER_PERSONA`, `CHATTER_TIME`, `CHATTER_RECENT`, `CLAUDEPET_TOKEN`
 - **Script lookup**: `Personas/<id>/generate-chatter.sh` → `scripts/generate-chatter.sh` → skip silently
-- **Providers**: Auto-detect (Anthropic Direct / AWS Bedrock / Ollama). Provider-specific scripts in `scripts/chatter-*.sh`
+- **Providers**: Auto-detect (Anthropic Direct / AWS Bedrock / Claude Code CLI). Provider-specific scripts in `scripts/chatter-*.sh`
 - **External POST**: `/chatter` endpoint still available for external callers
 - **Priority**: `authorize > notify > working > chatter > idle` — chatter always yields
 - **Opt-in**: Disabled by default. Enable via status bar menu toggle (`UserDefaults` key: `chatterEnabled`)

@@ -149,8 +149,9 @@ echo
 # Step 3: Idle chatter (LLM provider for script-based generation)
 # ══════════════════════════════════════════════════════
 printf "${BOLD}[3/4] Configure idle chatter${NC}\n"
-printf "  Idle chatter uses an external LLM to generate short persona-flavored lines.\n"
-printf "  ClaudePet detects idle time and runs a script to call the API.\n"
+printf "  Idle chatter generates short persona-flavored lines via LLM.\n"
+printf "  ClaudePet detects idle time and runs a script to call the provider.\n"
+printf "  Providers: Anthropic API, AWS Bedrock, or Claude Code CLI (claude -p --bare).\n"
 printf "  Enable/disable via the status bar menu toggle.\n"
 
 CHATTER_SCRIPT="$PROJECT_DIR/scripts/generate-chatter.sh"
@@ -162,22 +163,22 @@ else
   SUMMARY+=("✓ Chatter script configured")
 fi
 
-# Verify at least one provider is available
+# Check available providers (display only; runtime detection in generate-chatter.sh)
 PROVIDER_FOUND=false
 if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
   ok "Detected Anthropic API key"
   PROVIDER_FOUND=true
-elif command -v aws &>/dev/null && aws sts get-caller-identity &>/dev/null 2>&1; then
+elif command -v aws &>/dev/null && { [ -n "${AWS_ACCESS_KEY_ID:-}" ] || [ -f "$HOME/.aws/credentials" ] || [ -f "$HOME/.aws/config" ]; }; then
   ok "Detected AWS credentials (Bedrock)"
   PROVIDER_FOUND=true
-elif curl -s -m 1 http://localhost:11434/api/tags &>/dev/null 2>&1; then
-  ok "Detected Ollama (local)"
+elif command -v claude &>/dev/null; then
+  ok "Detected Claude Code CLI (claude -p --bare fallback)"
   PROVIDER_FOUND=true
 fi
 
 if ! $PROVIDER_FOUND; then
   printf "  ${YELLOW}Note${NC}: No LLM provider detected. Chatter will be silent until one is configured.\n"
-  printf "  Supported: ANTHROPIC_API_KEY, AWS Bedrock (aws CLI), Ollama (localhost:11434)\n"
+  printf "  Supported: ANTHROPIC_API_KEY, AWS Bedrock (aws CLI), Claude Code CLI\n"
   SUMMARY+=("→ No LLM provider detected (chatter will be silent)")
 fi
 echo

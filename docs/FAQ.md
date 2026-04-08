@@ -32,14 +32,14 @@ Plan files will be auto-allowed after this change.
 
 ### How does idle chatter work?
 
-ClaudePet detects when all Claude Code sessions have ended. After a delay (about 5 minutes with random jitter), it runs an external shell script that calls an LLM API to generate a short persona-flavored line. The script auto-detects your provider: Anthropic API, AWS Bedrock, or Ollama.
+ClaudePet detects when all Claude Code sessions have ended. After a delay (about 5 minutes with random jitter), it runs an external shell script that calls an LLM to generate a short persona-flavored line. The script auto-detects your provider: Anthropic API, AWS Bedrock, or Claude Code CLI (`claude -p --bare`).
 
 This happens entirely within the ClaudePet process — no Claude Code subagents, no cron jobs, no terminal output.
 
 ### Chatter isn't showing up
 
 1. Enable "Idle Chatter" in the status bar menu (disabled by default)
-2. Make sure an LLM provider is available (`ANTHROPIC_API_KEY`, AWS CLI configured, or Ollama running)
+2. Make sure an LLM provider is available (`ANTHROPIC_API_KEY`, AWS CLI configured, or `claude` CLI installed)
 3. Chatter only fires after all Claude Code sessions end and a ~5-minute delay passes
 4. Check that `scripts/generate-chatter.sh` is executable (`chmod +x scripts/generate-chatter.sh`)
 

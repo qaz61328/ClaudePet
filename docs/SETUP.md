@@ -22,7 +22,7 @@ What it does:
 
 1. Builds the release binary (`swift build -c release`)
 2. Writes Claude Code hook configuration to `~/.claude/settings.json`
-3. Sets up the idle chatter script and checks for available LLM providers (Anthropic API, AWS Bedrock, or Ollama)
+3. Sets up the idle chatter script and checks for available LLM providers (Anthropic API, AWS Bedrock, or Claude Code CLI)
 4. Adds a `claude()` shell wrapper to your RC file (`~/.zshrc` or `~/.bashrc`)
 
 After setup, run `claude` as usual. ClaudePet starts in the background before Claude Code launches.
@@ -84,7 +84,7 @@ Idle chatter is disabled by default. Toggle it on from the status bar menu.
 
 When enabled, ClaudePet detects idle state (all Claude Code sessions ended) and starts a timer (5 minutes ± random jitter). When the timer fires, it runs an external shell script to generate a short persona-flavored line via an LLM API.
 
-The script is resolved in order: `Personas/<id>/generate-chatter.sh` → `scripts/generate-chatter.sh`. It auto-detects available providers: Anthropic API (`ANTHROPIC_API_KEY`), AWS Bedrock (`aws` CLI), or Ollama (localhost:11434).
+The script is resolved in order: `Personas/<id>/generate-chatter.sh` → `scripts/generate-chatter.sh`. It auto-detects available providers: Anthropic API (`ANTHROPIC_API_KEY`), AWS Bedrock (`aws` CLI), or Claude Code CLI (`claude -p --bare`).
 
 No changes to `~/.claude/CLAUDE.md` are needed. Chatter runs entirely within the ClaudePet process.
 
@@ -185,7 +185,7 @@ Custom bindings persist in UserDefaults across restarts.
 
 ## Token Usage Note
 
-The idle chatter feature calls an external LLM API directly (not through Claude Code). Each chatter generation sends the persona prompt plus recent context to produce one short line. The cost depends on your provider: Anthropic API uses Claude Haiku, AWS Bedrock uses the cheapest available Claude model, and Ollama runs locally at zero cost.
+The idle chatter feature calls an LLM to produce one short line per cycle. The cost depends on your provider: Anthropic API uses Claude Haiku, AWS Bedrock uses the cheapest available Claude model, and Claude Code CLI (`claude -p --bare`) uses your existing Claude Code subscription at minimal token cost.
 
 To disable idle chatter, toggle it off from the status bar menu ("Idle Chatter"). Takes effect immediately; no restart needed.
 
@@ -230,7 +230,7 @@ You should get back `{"status":"ok","persona":"default",...}`. If the request fa
 **Idle chatter isn't firing**
 
 1. Check that "Idle Chatter" is enabled in the status bar menu
-2. Verify an LLM provider is available (`ANTHROPIC_API_KEY` set, `aws` CLI configured, or Ollama running)
+2. Verify an LLM provider is available (`ANTHROPIC_API_KEY` set, `aws` CLI configured, or `claude` CLI installed)
 3. Check that `scripts/generate-chatter.sh` is executable
 4. Chatter only triggers after all sessions end and a 5-minute delay passes — it won't fire while Claude Code is active
 5. Test the endpoint manually: `curl -X POST http://127.0.0.1:23987/chatter -H "Content-Type: application/json" -H "X-ClaudePet-Token: $(cat $TMPDIR/claudepet-token)" -d '{"message":"test"}'`
