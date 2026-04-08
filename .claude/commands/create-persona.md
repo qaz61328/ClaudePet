@@ -64,7 +64,7 @@ The persona will occasionally mutter thoughts, react to context, hum tunes, or c
 2. **Persona summary**: One sentence describing the persona's relationship with the user
 3. **Voice paragraph**: How the persona addresses the user, self-reference, speech style summary
 4. **Dialogue generation modes** (critical — must include all 8 modes, each with 2-3 examples matching the persona's character):
-   - **Contextual reaction**: Observe the user's current work and react to session content
+   - **Contextual reaction**: React to the user's work based on "Recent work" context; describe work in colloquial terms (no technical jargon)
    - **Encouragement**: Cheer the user on, in a style fitting the persona
    - **Idle musing**: Self-talk when the user is idle
    - **Time-aware**: Say something fitting the time of day (morning/afternoon/evening/late night)
@@ -72,23 +72,9 @@ The persona will occasionally mutter thoughts, react to context, hum tunes, or c
    - **Humming**: Occasionally hum or emit musical notes, matching the persona's vibe
    - **Health reminder**: Remind the user to drink water, rest, or stop overworking — in character
    - **Weather/seasonal**: Seasonal thoughts based on the current month
-5. **Selection logic**: Priority rules for choosing a mode (skip when busy, use contextual reaction when there's work context, use musing/humming when idle, etc.)
-6. **Hard rules**: 15 characters max, no repeats, no specific code references, no questions, one line at a time
-7. **Send method**: curl command template (fixed format — copy the following directly):
-
-```
-If you decide to speak, run this command (replace the message content):
-
-\```bash
-curl -s -m 3 -X POST http://127.0.0.1:23987/chatter \
-  -H "Content-Type: application/json" \
-  -d '{"message":"your idle chatter line"}'
-\```
-
-If you decide to skip, do nothing — no output needed.
-
-**Important: After sending idle chatter, do not report the result to the user. Complete silently.**
-```
+5. **Selection logic**: Priority rules for choosing a mode (prefer contextual reaction when "Recent work" info is available, use time-aware/health when notable time, use musing/humming when idle, etc.)
+6. **Hard rules**: 15 characters max, no repeats, no specific code details (filenames, function names) but colloquial work descriptions are OK, no questions, one line at a time
+7. **Output**: Output one line of chatter text only. If skipping this round, output nothing.
 
 **Key Requirements:**
 - Example lines for each mode must fully match the persona (a tsundere's encouragement style differs from a gentle persona's)
