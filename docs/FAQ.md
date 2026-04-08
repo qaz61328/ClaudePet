@@ -4,11 +4,7 @@
 
 ### How do I turn off permission notifications?
 
-Remove the `PreToolUse` hook from `~/.claude/settings.json`. ClaudePet will still show "work complete" notifications but stop intercepting tool authorizations.
-
-### I can't see what's being authorized
-
-Enable "Authorize in Terminal" in the status bar menu. ClaudePet will notify you that authorization is needed, then hand the approval back to Claude Code's built-in terminal dialog. You get the full diff and command details there.
+Open the Settings window and check "Authorize in Terminal". ClaudePet will stop intercepting tool authorizations, and approval goes back to Claude Code's built-in terminal dialog where you get the full diff and command details.
 
 ### "Always allow" doesn't persist across sessions
 
@@ -34,7 +30,7 @@ Plan files will be auto-allowed after this change.
 
 ClaudePet detects when all Claude Code sessions have ended. After a delay (about 5 minutes with random jitter), it runs an external shell script that calls an LLM to generate a short persona-flavored line. The script auto-detects your provider: Anthropic API, AWS Bedrock, or Claude Code CLI (`claude -p --bare`).
 
-This happens entirely within the ClaudePet process — no Claude Code subagents, no cron jobs, no terminal output.
+This happens entirely within the ClaudePet process — no Claude Code subagents, no terminal output. Each chatter event costs a small amount of tokens (one LLM call), so keep an eye on your API usage.
 
 ### Chatter isn't showing up
 

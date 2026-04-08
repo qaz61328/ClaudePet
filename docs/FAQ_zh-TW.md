@@ -4,11 +4,7 @@
 
 ### 如何關閉權限通知？
 
-刪除 `~/.claude/settings.json` 中的 `PreToolUse` hook 即可。ClaudePet 仍會顯示工作完成的通知，但不再攔截工具授權。
-
-### 需要授權的時候，看不到詳細要授權什麼
-
-在狀態列選單勾選「在終端機授權」。開啟後 ClaudePet 只會通知您需要授權，不再攔截授權內容。實際的核准操作會回到 Claude Code 終端機內建的對話框，可以看到完整的 diff 和指令細節。
+請到 Settings 視窗勾選「在終端機授權」即可。開啟後 ClaudePet 不再攔截工具授權，實際的核准操作會回到 Claude Code 終端機內建的對話框，可以看到完整的 diff 和指令細節。
 
 ### 需要授權的時候，按了「永遠允許」後，下次還是會跳出授權通知
 
@@ -34,7 +30,7 @@
 
 ClaudePet 偵測到所有 Claude Code session 結束後，等一段時間（約 5 分鐘加隨機偏移），跑外部 shell script 呼叫 LLM 產生一句符合角色的閒聊。腳本會自動偵測可用 provider：Anthropic API、AWS Bedrock、Claude Code CLI（`claude -p --bare`）。
 
-整個過程在 ClaudePet 程序內完成，不會跑 Claude Code subagent、不建 cron job、終端機不會有任何輸出。
+整個過程在 ClaudePet 程序內完成，不會跑 Claude Code subagent、終端機不會有任何輸出。每次閒聊會消耗少量 token（一次 LLM 呼叫），請留意 API 用量。
 
 ### 閒聊功能沒反應
 
