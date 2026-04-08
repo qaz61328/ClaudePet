@@ -4,7 +4,7 @@
 
 ### 如何關閉權限通知？
 
-請到 Settings 視窗勾選「在終端機授權」即可。開啟後 ClaudePet 不再攔截工具授權，實際的核准操作會回到 Claude Code 終端機內建的對話框，可以看到完整的 diff 和指令細節。
+請到 偏好設定 視窗勾選「在終端機授權」即可。開啟後 ClaudePet 不再攔截工具授權，實際的核准操作會回到 Claude Code 終端機內建的對話框，可以看到完整的 diff 和指令細節。
 
 ### 需要授權的時候，按了「永遠允許」後，下次還是會跳出授權通知
 
@@ -34,7 +34,7 @@ ClaudePet 偵測到所有 Claude Code session 結束後，等一段時間（約 
 
 ### 閒聊功能沒反應
 
-1. 從狀態列選單開啟「閒聊模式」（預設關閉）
+1. 到 偏好設定 視窗（一般 頁籤）勾選「啟用閒聊功能」（預設關閉）
 2. 確認有可用的 LLM provider（`ANTHROPIC_API_KEY` 有設、AWS CLI 有設好、或 `claude` CLI 有裝）
 3. 閒聊只在所有 Claude Code session 結束後等約 5 分鐘才觸發
 4. 確認 `scripts/generate-chatter.sh` 有執行權限（`chmod +x scripts/generate-chatter.sh`）

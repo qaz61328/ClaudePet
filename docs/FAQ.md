@@ -34,7 +34,7 @@ This happens entirely within the ClaudePet process — no Claude Code subagents,
 
 ### Chatter isn't showing up
 
-1. Enable "Idle Chatter" in the status bar menu (disabled by default)
+1. Enable "Idle Chatter" in the Settings window, General tab (disabled by default)
 2. Make sure an LLM provider is available (`ANTHROPIC_API_KEY`, AWS CLI configured, or `claude` CLI installed)
 3. Chatter only fires after all Claude Code sessions end and a ~5-minute delay passes
 4. Check that `scripts/generate-chatter.sh` is executable (`chmod +x scripts/generate-chatter.sh`)

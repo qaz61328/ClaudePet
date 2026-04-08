@@ -60,6 +60,16 @@ Add hooks to `~/.claude/settings.json`. Replace `/path/to/ClaudePet` with your a
     ],
     "PreToolUse": [
       {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/path/to/ClaudePet/hooks/notify-working.sh",
+            "async": true
+          }
+        ]
+      },
+      {
         "matcher": "Read|Bash|Edit|Write|NotebookEdit|AskUserQuestion|ExitPlanMode|mcp__.*",
         "hooks": [
           {
@@ -69,9 +79,6 @@ Add hooks to `~/.claude/settings.json`. Replace `/path/to/ClaudePet` with your a
         ]
       }
     ]
-  },
-  "permissions": {
-    "allow": []
   }
 }
 ```
@@ -80,7 +87,7 @@ If you already have a `settings.json`, merge the `hooks` section into your exist
 
 ### 3. Idle Chatter (Opt-in)
 
-Idle chatter is disabled by default. Toggle it on from the status bar menu.
+Idle chatter is disabled by default. Toggle it on in the Settings window (General tab).
 
 When enabled, ClaudePet detects idle state (all Claude Code sessions ended) and starts a timer (5 minutes ± random jitter). When the timer fires, it runs an external shell script to generate a short persona-flavored line via an LLM API.
 
@@ -172,7 +179,7 @@ The three authorization shortcuts only take effect when an authorization bubble 
 
 ### Customizing
 
-Open the status bar menu and click **Keyboard Shortcuts...**. A preferences window appears with one row per action. Click a row to enter recording mode, then press a modifier+key combination to set the new shortcut.
+Open the Settings window (**Keyboard Shortcuts** tab). Each action has its own row. Click a row to enter recording mode, then press a modifier+key combination to set the new shortcut.
 
 - At least one modifier key (⌃, ⌥, ⇧, or ⌘) is required
 - Press **Esc** to cancel recording
@@ -187,7 +194,7 @@ Custom bindings persist in UserDefaults across restarts.
 
 The idle chatter feature calls an LLM to produce one short line per cycle. The cost depends on your provider: Anthropic API uses Claude Haiku, AWS Bedrock uses the cheapest available Claude model, and Claude Code CLI (`claude -p --bare`) uses your existing Claude Code subscription at minimal token cost.
 
-To disable idle chatter, toggle it off from the status bar menu ("Idle Chatter"). Takes effect immediately; no restart needed.
+To disable idle chatter, uncheck "Enable Idle Chatter" in the Settings window (General tab). Takes effect immediately; no restart needed.
 
 ## Troubleshooting
 
@@ -229,7 +236,7 @@ You should get back `{"status":"ok","persona":"default",...}`. If the request fa
 
 **Idle chatter isn't firing**
 
-1. Check that "Idle Chatter" is enabled in the status bar menu
+1. Check that "Enable Idle Chatter" is checked in the Settings window (General tab)
 2. Verify an LLM provider is available (`ANTHROPIC_API_KEY` set, `aws` CLI configured, or `claude` CLI installed)
 3. Check that `scripts/generate-chatter.sh` is executable
 4. Chatter only triggers after all sessions end and a 5-minute delay passes — it won't fire while Claude Code is active
