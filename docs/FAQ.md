@@ -30,27 +30,18 @@ Plan files will be auto-allowed after this change.
 
 ## Idle Chatter
 
-### Why does an Agent run out of nowhere?
+### How does idle chatter work?
 
-That's the idle chatter feature. ClaudePet spends a small number of tokens to generate a context-aware line through a subagent. Turn it off from "Idle Chatter" in the status bar menu. The agent's execution will show in the terminal; this part cannot be hidden.
+ClaudePet detects when all Claude Code sessions have ended. After a delay (about 5 minutes with random jitter), it runs an external shell script that calls an LLM API to generate a short persona-flavored line. The script auto-detects your provider: Anthropic API, AWS Bedrock, or Ollama.
 
-### What is `.claude/scheduled_tasks.lock`?
+This happens entirely within the ClaudePet process — no Claude Code subagents, no cron jobs, no terminal output.
 
-Claude Code creates this file, not ClaudePet. Any session that calls `CronCreate` to set up a cron job causes Claude Code to drop this lock file in the project's `.claude/` directory.
+### Chatter isn't showing up
 
-Because `~/.claude/CLAUDE.md` tells Claude to create a chatter cron at the start of each session, this file appears in every project you work in.
-
-Add it to `.gitignore_global` to ignore it. Or, if you want no chatter at all, delete the chatter instructions from `~/.claude/CLAUDE.md`.
-
-### Why does the chatter cron sometimes fail to start?
-
-The chatter cron is configured through instructions in `~/.claude/CLAUDE.md`. Claude skips it sometimes because:
-
-1. The instruction sits deep in the file, diluted by other directives
-2. Claude focuses on the user's first message at conversation start
-3. "At the start of each session" reads like background noise Claude can ignore
-
-The fix: move the cron instruction to the top of `~/.claude/CLAUDE.md`, phrase it as a hard requirement, and give it its own section.
+1. Enable "Idle Chatter" in the status bar menu (disabled by default)
+2. Make sure an LLM provider is available (`ANTHROPIC_API_KEY`, AWS CLI configured, or Ollama running)
+3. Chatter only fires after all Claude Code sessions end and a ~5-minute delay passes
+4. Check that `scripts/generate-chatter.sh` is executable (`chmod +x scripts/generate-chatter.sh`)
 
 ## Characters and Customization
 

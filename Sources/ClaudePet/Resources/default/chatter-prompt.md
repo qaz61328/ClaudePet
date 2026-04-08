@@ -95,16 +95,6 @@ Seasonal observations based on the current month. No API needed, use common sens
 - Don't end with an exclamation mark more than once
 - One line only
 
-## How to Send
+## Output
 
-If you decide to send a message, run this command (replace the message):
-
-```bash
-curl -s -m 3 -X POST http://127.0.0.1:23987/chatter \
-  -H "Content-Type: application/json" \
-  -d '{"message":"your message here"}'
-```
-
-If you decide to skip, do nothing — no output needed.
-
-**Important: After sending a chatter message, do NOT report the result to the user. Complete silently.**
+Output one line of chatter text only. If you decide to skip this round, output nothing.

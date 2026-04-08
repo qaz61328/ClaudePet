@@ -5,25 +5,34 @@
 
 INPUT=$(cat)
 
-CWD=$(echo "$INPUT" | jq -r '.cwd // "unknown"')
-TOOL=$(echo "$INPUT" | jq -r '.tool_name // "unknown"')
-SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // ""')
-PROJECT=$(basename "$CWD")
-
 # Read auth token (if missing, ClaudePet is not running → fall through silently)
 TOKEN_FILE="${TMPDIR%/}/claudepet-token"
 TOKEN=$(cat "$TOKEN_FILE" 2>/dev/null) || exit 0
+
+# Extract all needed fields in a single jq call
+eval "$(echo "$INPUT" | jq -r '
+  "CWD=" + (.cwd // "unknown" | @sh),
+  "TOOL=" + (.tool_name // "unknown" | @sh),
+  "SESSION_ID=" + (.session_id // "" | @sh),
+  "WORK_CONTEXT=" + (
+    if .tool_name == "Bash" then "\(.tool_name): \(.tool_input.description // .tool_input.command // "" | .[0:80])"
+    elif (.tool_name == "Read" or .tool_name == "Edit" or .tool_name == "Write") then "\(.tool_name): \(.tool_input.file_path // "")"
+    elif .tool_name == "Agent" then "\(.tool_name): \(.tool_input.description // "")"
+    else .tool_name // ""
+    end | @sh)
+' 2>/dev/null)"
+PROJECT=$(basename "$CWD")
 
 # Per-project session-allow file (CWD hash prevents cross-project leaking)
 PROJECT_HASH=$(echo -n "$CWD" | md5 -q)
 SESSION_ALLOW="${TMPDIR%/}/claudepet-session-allow-${PROJECT_HASH}"
 
-# Notify ClaudePet this session is active (non-blocking fire-and-forget)
+# Notify ClaudePet this session is active with work context (synchronous, ~10ms on localhost)
 if [ -n "$SESSION_ID" ]; then
   curl -s -m 1 -X POST http://127.0.0.1:23987/working \
     -H "Content-Type: application/json" \
     -H "X-ClaudePet-Token: ${TOKEN}" \
-    -d "$(jq -n --arg s "$SESSION_ID" --argjson a true '{session:$s,active:$a}')" >/dev/null 2>&1 &
+    -d "$(jq -n --arg s "$SESSION_ID" --argjson a true --arg c "$WORK_CONTEXT" '{session:$s,active:$a,context:$c}')" >/dev/null 2>&1
 fi
 
 # AskUserQuestion → notify user to check back, skip authorization flow

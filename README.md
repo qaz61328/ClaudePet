@@ -7,7 +7,7 @@ Your desktop buddy for Claude Code. Intercepts permissions, pops notifications, 
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.2.6-blue" />
+  <img src="https://img.shields.io/badge/version-0.3.7-blue" />
   <img src="https://img.shields.io/badge/macOS-13%2B-black?logo=apple" />
   <img src="https://img.shields.io/badge/Swift-5.9%2B-F05138?logo=swift&logoColor=white" />
 </p>
@@ -26,7 +26,7 @@ Create your own character with custom dialogue, sprites, and sounds.
 - Pixel-art character with idle, bow, alert, and happy animations
 - Speech bubbles for work complete, needs input, and plan ready events
 - Allow once, always allow, or deny — replaces terminal permission prompts
-- Idle chatter throughout the day via cron-scheduled subagent
+- Idle chatter when bored — ClaudePet runs an external script to generate persona-flavored lines
 - Persona system with custom dialogue, sprites, and sound effects
 - Status bar menu for visibility, persona switching, and chatter control
 - Auto-launch with every `claude` invocation
@@ -57,7 +57,7 @@ cd ClaudePet
 bash scripts/setup.sh
 ```
 
-The setup script builds the binary, configures Claude Code hooks, sets up idle chatter scheduling, and adds a shell wrapper so ClaudePet launches with every `claude` invocation.
+The setup script builds the binary, configures Claude Code hooks, checks for LLM providers (idle chatter), and adds a shell wrapper so ClaudePet launches with every `claude` invocation.
 
 For step-by-step instructions or manual configuration, see [SETUP.md](docs/SETUP.md) | [繁體中文](docs/SETUP_zh-TW.md).
 
@@ -88,7 +88,7 @@ The upgrade script rebuilds the binary, updates Claude Code hooks and configs, a
 bash scripts/uninstall.sh
 ```
 
-This removes all ClaudePet environment configs: Claude Code hooks, idle chatter scheduling, the shell wrapper, and temp files. It does not delete the repo itself.
+This removes all ClaudePet environment configs: Claude Code hooks, the shell wrapper, and temp files. It does not delete the repo itself.
 
 ## Personas
 

@@ -102,6 +102,16 @@ else
     ],
     "PreToolUse": [
       {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$PROJECT_DIR/hooks/notify-working.sh",
+            "async": true
+          }
+        ]
+      },
+      {
         "matcher": "Read|Bash|Edit|Write|NotebookEdit|AskUserQuestion|ExitPlanMode|mcp__.*",
         "hooks": [
           {
@@ -113,11 +123,7 @@ else
     ]
   },
   "permissions": {
-    "allow": [
-      "Bash(touch*claudepet-chatter-lock*)",
-      "Bash(curl*127.0.0.1:23987*)",
-      "Bash(touch*claudepet-chatter-lock*curl*127.0.0.1:23987*)"
-    ]
+    "allow": []
   }
 }
 HOOKEOF
@@ -144,39 +150,49 @@ fi
 echo
 
 # ══════════════════════════════════════════════════════
-# Step 3: Idle chatter schedule → ~/.claude/CLAUDE.md
+# Step 3: Idle chatter (LLM provider for script-based generation)
 # ══════════════════════════════════════════════════════
-printf "${BOLD}[3/4] Configure idle chatter (CLAUDE.md)${NC}\n"
-printf "  ${YELLOW}Note${NC}: This feature sets up a cron job that triggers every ~20 minutes.\n"
-printf "  Each trigger uses a small amount of tokens (Haiku sub-agent).\n"
+printf "${BOLD}[3/4] Configure idle chatter${NC}\n"
+printf "  Idle chatter uses an external LLM to generate short persona-flavored lines.\n"
+printf "  ClaudePet detects idle time and runs a script to call the API.\n"
+printf "  Enable/disable via the status bar menu toggle.\n"
 
+# Clean up legacy CLAUDE.md chatter config if present
 CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
-
-CHATTER_BLOCK=$(cat <<CHATTEREOF
-
-<!-- claudepet-chatter-start -->
-## ClaudePet Idle Chatter
-
-At the start of each session, proactively set up an idle chatter schedule using CronCreate:
-- Cron minute field: randomly pick 3 different minutes (0-59), comma-separated (e.g. \`7,31,48 * * * *\`). Randomize per session to avoid multiple sessions triggering simultaneously.
-- prompt: \`First run touch \$TMPDIR/claudepet-chatter-lock (prevents Stop hook from sending extra "work complete" notifications). Then run curl -s -m 1 http://127.0.0.1:23987/health — if it fails, stop. On success, check the chatterEnabled field in the returned JSON; if false, stop (do not launch subagent). If true, use the Agent tool (model: haiku) to launch a subagent with a prompt that includes: (1) a one-sentence summary of the current conversation and the current time (2) instructions for the subagent to read ${PROJECT_DIR}/Personas/<persona-id>/chatter-prompt.md (persona ID from the health JSON) and follow all rules therein to decide whether to send idle chatter.\`
-- After sending chatter (whether cron-triggered or spontaneous), do not report the result to the user — complete silently
-- Additionally, you may spontaneously send chatter at appropriate moments during conversation (no need to wait for cron); spontaneous chatter does not require a subagent or the lock file
-<!-- claudepet-chatter-end -->
-CHATTEREOF
-)
-
 if [ -f "$CLAUDE_MD" ] && grep -q "claudepet-chatter-start" "$CLAUDE_MD" 2>/dev/null; then
-  skip "idle chatter"
-  SUMMARY+=("→ Idle chatter already configured")
+  # Remove the legacy block between markers
+  sed -i '' '/<!-- claudepet-chatter-start -->/,/<!-- claudepet-chatter-end -->/d' "$CLAUDE_MD"
+  # Trim excess blank lines
+  sed -i '' -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$CLAUDE_MD"
+  ok "Removed legacy chatter config from CLAUDE.md"
+fi
+
+CHATTER_SCRIPT="$PROJECT_DIR/scripts/generate-chatter.sh"
+if [ -x "$CHATTER_SCRIPT" ]; then
+  skip "chatter script (generate-chatter.sh already executable)"
+  SUMMARY+=("→ Chatter script ready")
 else
-  if confirm_opt_in "  Enable idle chatter? (uses tokens, default: no)"; then
-    echo "$CHATTER_BLOCK" >> "$CLAUDE_MD"
-    ok "Chatter config written to $CLAUDE_MD"
-    SUMMARY+=("✓ Configured idle chatter")
-  else
-    SUMMARY+=("→ Skipped idle chatter (can enable later via status bar menu)")
-  fi
+  chmod +x "$CHATTER_SCRIPT" 2>/dev/null && ok "Made generate-chatter.sh executable" || true
+  SUMMARY+=("✓ Chatter script configured")
+fi
+
+# Verify at least one provider is available
+PROVIDER_FOUND=false
+if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+  ok "Detected Anthropic API key"
+  PROVIDER_FOUND=true
+elif command -v aws &>/dev/null && aws sts get-caller-identity &>/dev/null 2>&1; then
+  ok "Detected AWS credentials (Bedrock)"
+  PROVIDER_FOUND=true
+elif curl -s -m 1 http://localhost:11434/api/tags &>/dev/null 2>&1; then
+  ok "Detected Ollama (local)"
+  PROVIDER_FOUND=true
+fi
+
+if ! $PROVIDER_FOUND; then
+  printf "  ${YELLOW}Note${NC}: No LLM provider detected. Chatter will be silent until one is configured.\n"
+  printf "  Supported: ANTHROPIC_API_KEY, AWS Bedrock (aws CLI), Ollama (localhost:11434)\n"
+  SUMMARY+=("→ No LLM provider detected (chatter will be silent)")
 fi
 echo
 

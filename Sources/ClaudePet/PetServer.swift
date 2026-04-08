@@ -172,7 +172,9 @@ class PetServer {
             let termAuth = Self.isTerminalAuthMode
             sendJSON(conn, status: 200, body: HealthResponse(
                 version: PersonaDirectory.appVersion, persona: personaID,
-                activeSessions: sessionCount, chatterEnabled: chatterOn, terminalAuthMode: termAuth
+                activeSessions: sessionCount, chatterEnabled: chatterOn, terminalAuthMode: termAuth,
+                recentChatter: recentChatter,
+                recentWorkContexts: recentWorkContexts
             ))
 
         case ("POST", "/notify"):
@@ -345,6 +347,15 @@ class PetServer {
 
         let active = json["active"] as? Bool ?? true
 
+        // Accumulate work context (preserved across idle for chatter reference)
+        if let context = json["context"] as? String, !context.isEmpty,
+           recentWorkContexts.last != context {
+            recentWorkContexts.append(context)
+            if recentWorkContexts.count > Self.recentWorkContextsMaxCount {
+                recentWorkContexts.removeFirst()
+            }
+        }
+
         if active {
             let wasEmpty = activeSessions.isEmpty
             activeSessions.insert(sessionID)
@@ -358,6 +369,7 @@ class PetServer {
             }
 
             if wasEmpty {
+                cancelChatterTimer()
                 petWindow?.petView.startWorking()
             }
         } else {
@@ -373,6 +385,7 @@ class PetServer {
 
         if activeSessions.isEmpty {
             petWindow?.petView.stopWorking()
+            scheduleChatterTimer()
         }
     }
 
@@ -394,72 +407,193 @@ class PetServer {
         set { UserDefaults.standard.set(newValue, forKey: chatterEnabledKey) }
     }
 
-    // MARK: - CLAUDE.md chatter config management
+    // MARK: - Idle Chatter Generation (pluggable script)
 
-    private static let chatterMarkerStart = "<!-- claudepet-chatter-start -->"
-    private static let chatterMarkerEnd = "<!-- claudepet-chatter-end -->"
-    private static let claudeMDPath = NSHomeDirectory() + "/.claude/CLAUDE.md"
+    /// Recent work contexts from /working endpoint (preserved across idle for chatter reference)
+    private var recentWorkContexts: [String] = []
+    private static let recentWorkContextsMaxCount = 10
 
-    /// Check if the chatter config block exists in ~/.claude/CLAUDE.md
-    static var isChatterConfigPresent: Bool {
-        guard let content = try? String(contentsOfFile: claudeMDPath, encoding: .utf8) else { return false }
-        return content.contains(chatterMarkerStart)
-    }
+    /// Recent chatter lines (used to avoid repetition)
+    private var recentChatter: [String] = []
+    private static let recentChatterMaxCount = 5
 
-    /// Append chatter config block to ~/.claude/CLAUDE.md (with start/end markers)
-    static func addChatterConfig() {
-        let projectPath = PersonaDirectory.projectRoot.path
-        let block = """
+    /// Idle chatter timer (fires after all sessions end + delay)
+    private var chatterTimer: Timer?
 
-        \(chatterMarkerStart)
-        ## ClaudePet Idle Chatter
+    /// Base delay before first chatter after going idle (seconds)
+    private static let chatterDelayBase: TimeInterval = 300
 
-        At the start of each session, proactively set up an idle chatter schedule using CronCreate:
-        - Cron minute field: randomly pick 3 different minutes (0-59), comma-separated (e.g. `7,31,48 * * * *`). Randomize per session to avoid multiple sessions triggering simultaneously.
-        - prompt: `First run touch $TMPDIR/claudepet-chatter-lock (prevents Stop hook from sending extra "work complete" notifications). Then run curl -s -m 1 http://127.0.0.1:23987/health — if it fails, stop. On success, check the chatterEnabled field in the returned JSON; if false, stop (do not launch subagent). If true, use the Agent tool (model: haiku) to launch a subagent with a prompt that includes: (1) a one-sentence summary of the current conversation and the current time (2) instructions for the subagent to read \(projectPath)/Personas/<persona-id>/chatter-prompt.md (persona ID from the health JSON) and follow all rules therein to decide whether to send idle chatter.`
-        - After sending chatter (whether cron-triggered or spontaneous), do not report the result to the user — complete silently
-        - Additionally, you may spontaneously send chatter at appropriate moments during conversation (no need to wait for cron); spontaneous chatter does not require a subagent or the lock file
-        \(chatterMarkerEnd)
-        """
+    /// Random jitter range (±seconds) added to base delay
+    private static let chatterDelayJitter: TimeInterval = 120
 
-        guard !isChatterConfigPresent else { return }
+    private func scheduleChatterTimer() {
+        chatterTimer?.invalidate()
+        chatterTimer = nil
+        guard Self.isChatterEnabled else { return }
 
-        let claudeDir = NSHomeDirectory() + "/.claude"
-        try? FileManager.default.createDirectory(atPath: claudeDir, withIntermediateDirectories: true)
+        let jitter = Double.random(in: -Self.chatterDelayJitter...Self.chatterDelayJitter)
+        let delay = max(60, Self.chatterDelayBase + jitter)
 
-        if let fh = FileHandle(forWritingAtPath: claudeMDPath) {
-            fh.seekToEndOfFile()
-            if let data = block.data(using: .utf8) { fh.write(data) }
-            fh.closeFile()
-        } else {
-            try? block.data(using: .utf8)?.write(to: URL(fileURLWithPath: claudeMDPath))
+        chatterTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.generateAndShowChatter()
+            }
         }
     }
 
-    /// Remove chatter config block from ~/.claude/CLAUDE.md (between start/end markers)
-    static func removeChatterConfig() {
-        guard let content = try? String(contentsOfFile: claudeMDPath, encoding: .utf8) else { return }
-        guard let startRange = content.range(of: chatterMarkerStart),
-              let endRange = content.range(of: chatterMarkerEnd) else { return }
+    private func cancelChatterTimer() {
+        chatterTimer?.invalidate()
+        chatterTimer = nil
+    }
 
-        // Include preceding newlines before the start marker
-        var removeStart = startRange.lowerBound
-        while removeStart > content.startIndex {
-            let prev = content.index(before: removeStart)
-            if content[prev] == "\n" { removeStart = prev } else { break }
+    private static let chatterScriptQueue = DispatchQueue(label: "com.claudepet.chatter-script", qos: .utility)
+
+    private static let iso8601Formatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.timeZone = .current
+        return f
+    }()
+
+    /// Generate chatter via external script and display it
+    private func generateAndShowChatter() {
+        guard Self.isChatterEnabled,
+              petWindow?.isVisible == true else {
+            scheduleChatterTimer()
+            return
         }
 
-        // Include trailing newline after end marker
-        var removeEnd = endRange.upperBound
-        if removeEnd < content.endIndex && content[removeEnd] == "\n" {
-            removeEnd = content.index(after: removeEnd)
+        let personaID = DialogueBank.current.id
+
+        // Resolve script path: persona-specific > global default
+        guard let scriptPath = resolveChatterScript(personaID: personaID) else {
+            scheduleChatterTimer()
+            return
         }
 
-        var newContent = String(content[..<removeStart]) + String(content[removeEnd...])
-        // Trim excess trailing newlines
-        while newContent.hasSuffix("\n\n\n") { newContent.removeLast() }
+        let promptPath = resolveChatterPrompt(personaID: personaID)
+        let context = recentWorkContexts.joined(separator: "\n")
+        let timeStr = Self.iso8601Formatter.string(from: Date())
+        let token = Self.authToken
+        let recent = recentChatter
 
-        try? newContent.write(toFile: claudeMDPath, atomically: true, encoding: .utf8)
+        Task.detached { [weak self] in
+            let result = await Self.runChatterScript(
+                scriptPath: scriptPath,
+                promptPath: promptPath,
+                context: context,
+                personaID: personaID,
+                time: timeStr,
+                authToken: token,
+                recentChatter: recent
+            )
+            await MainActor.run { [weak self] in
+                guard let self else {
+                    return
+                }
+                if let text = result, !text.isEmpty {
+                    self.petWindow?.petView.showChatter(text: text)
+                    self.recentChatter.append(text)
+                    if self.recentChatter.count > Self.recentChatterMaxCount {
+                        self.recentChatter.removeFirst()
+                    }
+                }
+                self.scheduleChatterTimer()
+            }
+        }
+    }
+
+    /// Find the chatter generation script (persona dir > scripts/ dir)
+    private func resolveChatterScript(personaID: String) -> String? {
+        let fm = FileManager.default
+
+        // 1. Persona-specific script
+        let personaScript = PersonaDirectory.baseURL
+            .appendingPathComponent(personaID)
+            .appendingPathComponent("generate-chatter.sh").path
+        if fm.isExecutableFile(atPath: personaScript) { return personaScript }
+
+        // 2. Global default script
+        let globalScript = PersonaDirectory.projectRoot
+            .appendingPathComponent("scripts/generate-chatter.sh").path
+        if fm.isExecutableFile(atPath: globalScript) { return globalScript }
+
+        return nil
+    }
+
+    /// Find the chatter prompt file for the current persona
+    private func resolveChatterPrompt(personaID: String) -> String? {
+        let fm = FileManager.default
+
+        // Persona-specific prompt
+        let personaPrompt = PersonaDirectory.baseURL
+            .appendingPathComponent(personaID)
+            .appendingPathComponent("chatter-prompt.md").path
+        if fm.fileExists(atPath: personaPrompt) { return personaPrompt }
+
+        // Default persona prompt
+        let defaultPrompt = PersonaDirectory.baseURL
+            .appendingPathComponent("default")
+            .appendingPathComponent("chatter-prompt.md").path
+        if fm.fileExists(atPath: defaultPrompt) { return defaultPrompt }
+
+        return nil
+    }
+
+    /// Execute chatter script in a background process, return stdout text
+    private nonisolated static func runChatterScript(
+        scriptPath: String,
+        promptPath: String?,
+        context: String?,
+        personaID: String,
+        time: String,
+        authToken: String,
+        recentChatter: [String]
+    ) async -> String? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/bash")
+        process.arguments = [scriptPath]
+
+        // Pass parameters via environment variables
+        var env = ProcessInfo.processInfo.environment
+        env["CHATTER_PROMPT_PATH"] = promptPath ?? ""
+        env["CHATTER_CONTEXT"] = context ?? ""
+        env["CHATTER_PERSONA"] = personaID
+        env["CHATTER_TIME"] = time
+        env["CLAUDEPET_TOKEN"] = authToken
+        env["CHATTER_RECENT"] = recentChatter.joined(separator: "\n")
+        process.environment = env
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+
+        do {
+            try process.run()
+        } catch {
+            return nil
+        }
+
+        // Wait on a dedicated queue to avoid blocking the cooperative thread pool
+        return await withCheckedContinuation { continuation in
+            Self.chatterScriptQueue.async {
+                let deadline = DispatchTime.now() + 10.0
+                DispatchQueue.global().asyncAfter(deadline: deadline) {
+                    if process.isRunning { process.terminate() }
+                }
+
+                process.waitUntilExit()
+
+                guard process.terminationStatus == 0 else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                let text = String(data: data, encoding: .utf8)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                continuation.resume(returning: text)
+            }
+        }
     }
 
     // MARK: - Authorization Mode
@@ -541,6 +675,8 @@ private struct HealthResponse: Encodable {
     let activeSessions: Int
     let chatterEnabled: Bool
     let terminalAuthMode: Bool
+    let recentChatter: [String]
+    let recentWorkContexts: [String]
 }
 
 private struct StatusResponse: Encodable { let status: String }

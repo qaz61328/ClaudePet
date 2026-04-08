@@ -12,7 +12,7 @@
 bash scripts/setup.sh
 ```
 
-The script walks through four steps, asking for confirmation at each one. Pass `--yes` to skip the prompts (idle chatter is opt-in and skipped in `--yes` mode):
+The script walks through four steps, asking for confirmation at each one. Pass `--yes` to skip the prompts (idle chatter provider detection is skipped in `--yes` mode):
 
 ```bash
 bash scripts/setup.sh --yes
@@ -22,7 +22,7 @@ What it does:
 
 1. Builds the release binary (`swift build -c release`)
 2. Writes Claude Code hook configuration to `~/.claude/settings.json`
-3. Asks whether to enable idle chatter (opt-in, default: no). If yes, appends the chatter config block to `~/.claude/CLAUDE.md`
+3. Sets up the idle chatter script and checks for available LLM providers (Anthropic API, AWS Bedrock, or Ollama)
 4. Adds a `claude()` shell wrapper to your RC file (`~/.zshrc` or `~/.bashrc`)
 
 After setup, run `claude` as usual. ClaudePet starts in the background before Claude Code launches.
@@ -71,36 +71,22 @@ Add hooks to `~/.claude/settings.json`. Replace `/path/to/ClaudePet` with your a
     ]
   },
   "permissions": {
-    "allow": [
-      "Bash(touch*claudepet-chatter-lock*)",
-      "Bash(curl*127.0.0.1:23987*)",
-      "Bash(touch*claudepet-chatter-lock*curl*127.0.0.1:23987*)"
-    ]
+    "allow": []
   }
 }
 ```
 
-The `permissions.allow` entries let ClaudePet-related Bash commands (chatter lock file, curl to the local server) run without triggering an authorization prompt.
-
-If you already have a `settings.json`, merge the `hooks` and `permissions` sections into your existing file.
+If you already have a `settings.json`, merge the `hooks` section into your existing file.
 
 ### 3. Idle Chatter (Opt-in)
 
-Idle chatter is disabled by default. To enable it, append this block to `~/.claude/CLAUDE.md` (or toggle it on from the status bar menu later):
+Idle chatter is disabled by default. Toggle it on from the status bar menu.
 
-```markdown
-<!-- claudepet-chatter-start -->
-## ClaudePet Idle Chatter
+When enabled, ClaudePet detects idle state (all Claude Code sessions ended) and starts a timer (5 minutes ± random jitter). When the timer fires, it runs an external shell script to generate a short persona-flavored line via an LLM API.
 
-At the start of each session, set up a chatter schedule using CronCreate:
-- Cron minute field: pick 3 random minutes (0-59), comma-separated (e.g. `7,31,48 * * * *`). Randomize per session to avoid multiple sessions firing at the same time.
-- Prompt: `First run touch $TMPDIR/claudepet-chatter-lock (prevents the Stop hook from sending an extra "work complete" notification). Then run curl -s -m 1 http://127.0.0.1:23987/health. If it fails, stop. If it succeeds, check the chatterEnabled field in the response JSON. If false, stop (do not launch subagent). If true, launch a subagent with the Agent tool (model: haiku). The subagent prompt should include: (1) a one-line summary of the current conversation and the current time (2) instructions to read /path/to/ClaudePet/Personas/<persona-id>/chatter-prompt.md (get persona ID from the health JSON) and follow all rules within to decide whether to send chatter.`
-- After sending chatter (whether cron or spontaneous), do not report the result. Complete silently.
-- You can also send chatter spontaneously when the timing feels right (no cron, no lock file needed).
-<!-- claudepet-chatter-end -->
-```
+The script is resolved in order: `Personas/<id>/generate-chatter.sh` → `scripts/generate-chatter.sh`. It auto-detects available providers: Anthropic API (`ANTHROPIC_API_KEY`), AWS Bedrock (`aws` CLI), or Ollama (localhost:11434).
 
-Replace `/path/to/ClaudePet` with your actual project path. The `<!-- claudepet-chatter-start/end -->` markers are required — the status bar menu toggle and upgrade script use them to safely add/remove the block.
+No changes to `~/.claude/CLAUDE.md` are needed. Chatter runs entirely within the ClaudePet process.
 
 ### 4. Shell Wrapper (Auto-Launch)
 
@@ -131,7 +117,7 @@ bash scripts/upgrade.sh
 The upgrade script:
 1. Rebuilds the release binary
 2. Updates Claude Code hooks in `~/.claude/settings.json` (only refreshes hooks that are still present; respects manual removals)
-3. Updates the idle chatter block in `~/.claude/CLAUDE.md` if enabled (skips if chatter was never enabled)
+3. Removes legacy chatter config from `~/.claude/CLAUDE.md` if present
 4. Updates the shell wrapper if the project path changed
 5. Restarts ClaudePet
 
@@ -144,7 +130,7 @@ bash scripts/uninstall.sh
 The script asks for confirmation, then:
 1. Stops the ClaudePet process
 2. Removes ClaudePet hooks and permissions from `~/.claude/settings.json`
-3. Removes the idle chatter block from `~/.claude/CLAUDE.md`
+3. Removes legacy chatter config from `~/.claude/CLAUDE.md` if present
 4. Removes the `claude()` shell wrapper from your RC file
 5. Cleans up temp files (`$TMPDIR/claudepet-*`)
 
@@ -199,9 +185,9 @@ Custom bindings persist in UserDefaults across restarts.
 
 ## Token Usage Note
 
-The idle chatter feature uses a CronCreate-triggered subagent running on the haiku model. Each chatter check consumes a small number of tokens: the subagent reads the chatter prompt file, evaluates whether to speak, and if so, sends a short POST request.
+The idle chatter feature calls an external LLM API directly (not through Claude Code). Each chatter generation sends the persona prompt plus recent context to produce one short line. The cost depends on your provider: Anthropic API uses Claude Haiku, AWS Bedrock uses the cheapest available Claude model, and Ollama runs locally at zero cost.
 
-If you want to minimize token usage, disable idle chatter from the status bar menu ("Idle Chatter" toggle). The toggle takes effect immediately; no restart needed.
+To disable idle chatter, toggle it off from the status bar menu ("Idle Chatter"). Takes effect immediately; no restart needed.
 
 ## Troubleshooting
 
@@ -244,8 +230,10 @@ You should get back `{"status":"ok","persona":"default",...}`. If the request fa
 **Idle chatter isn't firing**
 
 1. Check that "Idle Chatter" is enabled in the status bar menu
-2. Verify the `~/.claude/CLAUDE.md` chatter block exists
-3. Test the endpoint: `curl -X POST http://127.0.0.1:23987/chatter -H "Content-Type: application/json" -d '{"message":"test"}'`
+2. Verify an LLM provider is available (`ANTHROPIC_API_KEY` set, `aws` CLI configured, or Ollama running)
+3. Check that `scripts/generate-chatter.sh` is executable
+4. Chatter only triggers after all sessions end and a 5-minute delay passes — it won't fire while Claude Code is active
+5. Test the endpoint manually: `curl -X POST http://127.0.0.1:23987/chatter -H "Content-Type: application/json" -H "X-ClaudePet-Token: $(cat $TMPDIR/claudepet-token)" -d '{"message":"test"}'`
 
 **Character is stuck in working animation**
 

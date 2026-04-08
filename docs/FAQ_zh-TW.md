@@ -30,27 +30,18 @@
 
 ## 閒聊
 
-### 為什麼有時候會突然跑 Agent？
+### 閒聊功能怎麼運作的？
 
-那是閒聊功能。ClaudePet 會消耗少量 token，透過 subagent 用 AI 產生符合當下情境的台詞。你可以從狀態列選單的「閒聊功能」關閉這個功能。注意 agent 的執行過程一定會顯示在終端機上，這部分無法隱藏。
+ClaudePet 偵測到所有 Claude Code session 結束後，等一段時間（約 5 分鐘加隨機偏移），跑外部 shell script 呼叫 LLM API 產生一句符合角色的閒聊。腳本會自動偵測可用 provider：Anthropic API、AWS Bedrock、Ollama。
 
-### `.claude/scheduled_tasks.lock` 是什麼？
+整個過程在 ClaudePet 程序內完成，不會跑 Claude Code subagent、不建 cron job、終端機不會有任何輸出。
 
-這個檔案不是 ClaudePet 產生的，而是 Claude Code 自己的排程機制。只要任何 session 使用 `CronCreate` 建立 cron job，Claude Code 就會在該專案的 `.claude/` 目錄下放這個 lock file。
+### 閒聊功能沒反應
 
-因為 `~/.claude/CLAUDE.md` 中的閒聊指示會讓 Claude 在每個 session 開始時建立 cron job，所以這個檔案會出現在你工作的每個專案中。
-
-你可以把它加入 `.gitignore_global` 來忽略，或者如果你完全不想要閒聊功能，把 `~/.claude/CLAUDE.md` 中所有閒聊相關的指示刪除即可。
-
-### 為什麼有時候閒聊 cron job 沒有啟動？
-
-閒聊 cron job 是透過 `~/.claude/CLAUDE.md` 中的指示來設定的。有時候 Claude 會跳過它，原因包括：
-
-1. 指示埋在檔案中後段，被大量其他指示稀釋
-2. 對話開始時 Claude 的注意力集中在使用者的第一則訊息上
-3. 「At the start of each session」這種描述容易被當成背景資訊跳過
-
-最有效的改法：把 cron 設定指示搬到 `~/.claude/CLAUDE.md` 的最頂部，用更強制的語氣，獨立成一個區塊。
+1. 從狀態列選單開啟「閒聊模式」（預設關閉）
+2. 確認有可用的 LLM provider（`ANTHROPIC_API_KEY` 有設、AWS CLI 有設好、或 Ollama 在跑）
+3. 閒聊只在所有 Claude Code session 結束後等約 5 分鐘才觸發
+4. 確認 `scripts/generate-chatter.sh` 有執行權限（`chmod +x scripts/generate-chatter.sh`）
 
 ## 角色與自訂
 

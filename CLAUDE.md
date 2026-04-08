@@ -52,7 +52,7 @@ All POST endpoints require auth token (`X-ClaudePet-Token` header) and Host head
 | POST | `/notify` | Notification. Returns 200 immediately. `type` field: `"ask"`, `"plan"` |
 | POST | `/authorize` | Authorization request. Holds connection until user clicks. 60-second timeout. |
 | POST | `/chatter` | Idle chatter (no sound). Body: `{"message":"..."}`. Silently discarded if auth/notify showing. |
-| POST | `/working` | Session work state. Body: `{"session":"<uuid>","active":true/false}`. 3-minute auto-expiry. |
+| POST | `/working` | Session work state. Body: `{"session":"<uuid>","active":true/false,"context":"<brief work description>"}`. 3-minute auto-expiry. |
 
 ### Security
 
@@ -67,11 +67,13 @@ Integrates with Claude Code's [hook system](https://docs.anthropic.com/en/docs/c
 
 **Stop hook** (`notify-stop.sh`):
 1. POST `/working` (active=false) to end session's working state
-2. Check `$TMPDIR/claudepet-chatter-lock` — if exists, delete and skip notification
-3. POST `/notify` to show "work complete" bubble
+2. POST `/notify` to show "work complete" bubble
 
-**PreToolUse hook** (`notify-permission.sh`):
-1. POST `/working` (active=true) fire-and-forget
+**Working-state hook** (`notify-working.sh`, async, matches all tools):
+- POST `/working` (active=true) on every tool call to keep working animation in sync
+
+**Permission hook** (`notify-permission.sh`, sync, matches auth-eligible tools):
+1. POST `/working` (active=true, context=tool description) with work context update
 2. `AskUserQuestion` → POST `/notify` (type=ask); `ExitPlanMode` → POST `/notify` (type=plan)
 3. **Authorize in Terminal** mode → exit 0 silently (no pet bubble, Claude Code handles auth natively)
 4. Check session-allow list (tools "always allowed" pass through). File: `$TMPDIR/claudepet-session-allow-<md5(CWD)>`
@@ -82,11 +84,14 @@ Two auth modes switchable via status bar menu. Persisted in UserDefaults, synced
 
 ### Idle Chatter
 
-- **Scheduled**: CronCreate → `touch $TMPDIR/claudepet-chatter-lock` → subagent reads `Personas/<id>/chatter-prompt.md`
-- **Spontaneous**: POST `/chatter` during conversation
+- **Trigger**: ClaudePet detects idle state (all sessions ended) → starts timer (5 min ± random jitter) → runs external script
+- **Generation**: Pluggable shell script (`scripts/generate-chatter.sh`) calls LLM API with persona prompt + work context → returns one line of text
+- **Script env vars**: `CHATTER_PROMPT_PATH`, `CHATTER_CONTEXT`, `CHATTER_PERSONA`, `CHATTER_TIME`, `CHATTER_RECENT`, `CLAUDEPET_TOKEN`
+- **Script lookup**: `Personas/<id>/generate-chatter.sh` → `scripts/generate-chatter.sh` → skip silently
+- **Providers**: Auto-detect (Anthropic Direct / AWS Bedrock / Ollama). Provider-specific scripts in `scripts/chatter-*.sh`
+- **External POST**: `/chatter` endpoint still available for external callers
 - **Priority**: `authorize > notify > working > chatter > idle` — chatter always yields
-- **Opt-in**: Disabled by default. Enable via `setup.sh` or status bar menu toggle (`UserDefaults` key: `chatterEnabled`)
-- **CLAUDE.md config block**: `<!-- claudepet-chatter-start/end -->` markers, managed by toggle
+- **Opt-in**: Disabled by default. Enable via status bar menu toggle (`UserDefaults` key: `chatterEnabled`)
 
 ### Persona System
 

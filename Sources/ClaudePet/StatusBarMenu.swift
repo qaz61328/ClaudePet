@@ -179,12 +179,9 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
 
     @objc private func toggleChatter() {
         PetServer.isChatterEnabled.toggle()
-        let enabled = PetServer.isChatterEnabled
-        if enabled {
-            PetServer.addChatterConfig()
+        if PetServer.isChatterEnabled {
             showBubble(L("Idle chatter ON."))
         } else {
-            PetServer.removeChatterConfig()
             showBubble(L("Idle chatter OFF."))
         }
     }
