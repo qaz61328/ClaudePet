@@ -3,6 +3,8 @@
 # Fires on ALL tool calls to notify ClaudePet that a session is active.
 # Runs async so it never blocks tool execution. No authorization logic.
 
+[ "${CLAUDEPET_CHATTER:-}" = "1" ] && exit 0
+
 INPUT=$(cat)
 
 # Read auth token (if missing, ClaudePet is not running → exit silently)

@@ -3,6 +3,8 @@
 # Called when Claude Code finishes work, notifies the desktop pet
 # Falls back silently if ClaudePet is not running
 
+[ "${CLAUDEPET_CHATTER:-}" = "1" ] && exit 0
+
 INPUT=$(cat)
 
 CWD=$(echo "$INPUT" | jq -r '.cwd // "unknown"')

@@ -3,6 +3,8 @@
 # Called when Claude Code needs authorization, synchronously waits for user decision
 # On failure/timeout → no output, lets Claude Code fall through to normal flow
 
+[ "${CLAUDEPET_CHATTER:-}" = "1" ] && exit 0
+
 INPUT=$(cat)
 
 # Read auth token (if missing, ClaudePet is not running → fall through silently)
