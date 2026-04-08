@@ -40,6 +40,14 @@
 "Claude Code CLI" = "Claude Code CLI";
 "Authorization" = "授權";
 
+/* TTS */
+"TTS (Text-to-Speech)" = "TTS（文字轉語音）";
+"Enable TTS for Chatter" = "啟用閒聊語音朗讀";
+"Edge TTS" = "Edge TTS";
+"macOS Say" = "macOS Say";
+"TTS ON." = "語音朗讀已開啟，閒聊時會朗讀對話";
+"TTS OFF." = "語音朗讀已關閉";
+
 /* Keyboard Shortcuts */
 "Keyboard Shortcuts" = "快捷鍵設定";
 "Toggle Pet" = "顯示／隱藏小幫手";

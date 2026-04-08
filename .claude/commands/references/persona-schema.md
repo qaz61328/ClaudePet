@@ -32,6 +32,7 @@ Personas/
     notify.aif            # Sound: notification chime (optional)
     authorize.aif         # Sound: authorization prompt sound (optional)
     chatter-prompt.md     # Idle chatter prompt (optional, read by CronCreate)
+    tts.sh                # Custom TTS script override (optional)
     generate_sprites.py   # Script to generate the above PNGs (optional)
 ```
 
@@ -81,6 +82,11 @@ Personas/
   "planReady": {
     "generic":     ["Notification when Plan Mode plan is ready (without project name)"],
     "withProject": ["Version with project name, use {project} as placeholder"]
+  },
+
+  "tts": {
+    "edgeTTS": "Edge TTS voice name (e.g. en-US-AriaNeural, zh-TW-HsiaoChenNeural)",
+    "say": "macOS say voice name (e.g. Samantha, Meijia)"
   }
 }
 ```
@@ -136,6 +142,26 @@ The `chatter-prompt.md` file in the persona directory is read by Claude Code's C
 **Optional**: Personas without this file will work normally — they just won't have scheduled idle chatter.
 
 Example reference: `Personas/default/chatter-prompt.md`
+
+## TTS (Text-to-Speech) Voice Configuration
+
+The optional `tts` object in `persona.json` maps voice names to TTS providers. When TTS is enabled, chatter text is spoken aloud using the configured voice.
+
+**Fields:**
+- `edgeTTS` (optional): Voice name for [Edge TTS](https://github.com/rany2/edge-tts) (Microsoft neural voices, free). Example: `"en-US-AriaNeural"`, `"zh-TW-HsiaoChenNeural"`
+- `say` (optional): Voice name for macOS `say` command (built-in, offline). Example: `"Samantha"`, `"Meijia"`
+
+**Choosing a voice:**
+- Browse Edge TTS voices: `edge-tts --list-voices`
+- Preview Edge TTS: `edge-tts --text "test" --voice "voice-name" --write-media /tmp/test.mp3 && afplay /tmp/test.mp3`
+- Browse macOS voices: `say -v '?'`
+- Preview macOS voice: `say -v "VoiceName" "test text"`
+
+**Important:** Match the voice language to the chatter prompt language. A Japanese voice reading Chinese text will produce garbled pronunciation.
+
+**Fallback:** If omitted, the TTS script uses its own default (`en-US-AriaNeural` for Edge TTS, `Samantha` for macOS say).
+
+**Custom TTS script:** Drop a `tts.sh` in the persona directory to override the global TTS dispatcher entirely. The script receives `TTS_TEXT`, `TTS_PERSONA`, `TTS_VOICE` as environment variables and must output the path to a generated audio file on stdout.
 
 ## Sprite Specifications
 

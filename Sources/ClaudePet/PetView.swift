@@ -386,11 +386,12 @@ class PetView: NSView {
 
     // MARK: - Chatter (idle chatter, no sound, low priority)
 
-    /// Chatter bubble: no sound, silently discarded if not idle/working or a bubble is showing
+    /// Chatter bubble: no sound effect, TTS if enabled, silently discarded if not idle/working or a bubble is showing
     func showChatter(text: String) {
         guard (animationState == .idle || animationState == .working),
               authBubble == nil, speechBubble == nil,
               pendingAuth == nil else { return }
+        TTSPlayer.speak(text: text)
         showTemporaryBubble(text: text, state: .talking, duration: 3.5)
     }
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ClaudePet Setup Script
-# One-command environment setup: build → hooks → chatter → shell wrapper
+# One-command environment setup: build → hooks → chatter → TTS → shell wrapper
 # Usage: bash scripts/setup.sh [--yes]
 
 set -euo pipefail
@@ -61,7 +61,7 @@ fi
 # ══════════════════════════════════════════════════════
 # Step 1: Build
 # ══════════════════════════════════════════════════════
-printf "${BOLD}[1/4] Build ClaudePet (release)${NC}\n"
+printf "${BOLD}[1/5] Build ClaudePet (release)${NC}\n"
 if confirm "  Run swift build -c release?"; then
   (cd "$PROJECT_DIR" && swift build -c release)
   ok "Build complete"
@@ -74,7 +74,7 @@ echo
 # ══════════════════════════════════════════════════════
 # Step 2: Claude Code hooks → ~/.claude/settings.json
 # ══════════════════════════════════════════════════════
-printf "${BOLD}[2/4] Configure Claude Code hooks${NC}\n"
+printf "${BOLD}[2/5] Configure Claude Code hooks${NC}\n"
 
 CLAUDE_DIR="$HOME/.claude"
 SETTINGS_FILE="$CLAUDE_DIR/settings.json"
@@ -148,7 +148,7 @@ echo
 # ══════════════════════════════════════════════════════
 # Step 3: Idle chatter (LLM provider for script-based generation)
 # ══════════════════════════════════════════════════════
-printf "${BOLD}[3/4] Configure idle chatter${NC}\n"
+printf "${BOLD}[3/5] Configure idle chatter${NC}\n"
 printf "  Idle chatter generates short persona-flavored lines via LLM.\n"
 printf "  ClaudePet detects idle time and runs a script to call the provider.\n"
 printf "  Providers: Anthropic API, AWS Bedrock, or Claude Code CLI (claude -p --bare).\n"
@@ -184,9 +184,47 @@ fi
 echo
 
 # ══════════════════════════════════════════════════════
-# Step 4: Shell wrapper → RC file
+# Step 4: TTS (text-to-speech for chatter)
 # ══════════════════════════════════════════════════════
-printf "${BOLD}[4/4] Configure shell wrapper${NC}\n"
+printf "${BOLD}[4/5] Configure TTS (text-to-speech)${NC}\n"
+printf "  TTS reads chatter text aloud using neural voices.\n"
+printf "  Providers: Edge TTS (neural, requires Python) or macOS say (built-in, offline).\n"
+printf "  Enable/disable via Settings > TTS.\n"
+
+TTS_SCRIPT="$PROJECT_DIR/scripts/tts.sh"
+if [ -x "$TTS_SCRIPT" ]; then
+  skip "TTS scripts (already executable)"
+else
+  chmod +x "$TTS_SCRIPT" "$PROJECT_DIR/scripts/tts-edge.sh" "$PROJECT_DIR/scripts/tts-say.sh" 2>/dev/null && ok "Made TTS scripts executable" || true
+fi
+
+if command -v edge-tts &>/dev/null; then
+  ok "Detected edge-tts (neural voices)"
+  SUMMARY+=("✓ TTS: edge-tts available")
+elif command -v pipx &>/dev/null; then
+  if confirm_opt_in "  Install edge-tts for neural-quality voices? (pipx install edge-tts)"; then
+    if pipx install edge-tts 2>/dev/null; then
+      ok "edge-tts installed"
+      SUMMARY+=("✓ TTS: edge-tts installed")
+    else
+      printf "  ${YELLOW}Note${NC}: pipx install failed. macOS say will be used as fallback.\n"
+      SUMMARY+=("→ TTS: edge-tts install failed, macOS say fallback")
+    fi
+  else
+    ok "Using macOS say (built-in, offline)"
+    SUMMARY+=("→ TTS: macOS say (built-in)")
+  fi
+else
+  printf "  To install edge-tts later: brew install pipx && pipx install edge-tts\n"
+  ok "Using macOS say (built-in)"
+  SUMMARY+=("→ TTS: macOS say (built-in)")
+fi
+echo
+
+# ══════════════════════════════════════════════════════
+# Step 5: Shell wrapper → RC file
+# ══════════════════════════════════════════════════════
+printf "${BOLD}[5/5] Configure shell wrapper${NC}\n"
 
 # Detect shell
 case "${SHELL:-/bin/zsh}" in

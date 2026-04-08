@@ -150,6 +150,12 @@ struct GreetingData: Codable {
     let lateNight: [String]
 }
 
+/// TTS voice configuration per persona (optional)
+struct TTSVoiceConfig: Codable {
+    let edgeTTS: String?
+    let say: String?
+}
+
 /// Complete data structure for persona.json
 struct PersonaData: Codable {
     let id: String
@@ -163,6 +169,7 @@ struct PersonaData: Codable {
     let switchToTerminal: [String]
     let needsAttention: ProjectDialogue
     let planReady: ProjectDialogue
+    let tts: TTSVoiceConfig?
 }
 
 // MARK: - Data-Driven Persona
@@ -171,6 +178,9 @@ struct PersonaData: Codable {
 struct DataDrivenPersona: Persona {
     let id: String
     let displayName: String
+
+    /// TTS voice configuration (exposed for TTSPlayer)
+    var ttsVoiceConfig: TTSVoiceConfig? { data.tts }
 
     private let data: PersonaData
 
@@ -295,6 +305,68 @@ enum PersonaDirectory {
         }
         return Bundle.main.executableURL?.deletingLastPathComponent() ?? URL(fileURLWithPath: ".")
     }()
+
+    // MARK: - Script Utilities
+
+    /// Find an executable script: persona-specific → global scripts/ fallback
+    static func resolveScript(personaID: String, name: String) -> String? {
+        let fm = FileManager.default
+        let personaScript = baseURL.appendingPathComponent(personaID)
+            .appendingPathComponent(name).path
+        if fm.isExecutableFile(atPath: personaScript) { return personaScript }
+        let globalScript = projectRoot.appendingPathComponent("scripts/\(name)").path
+        if fm.isExecutableFile(atPath: globalScript) { return globalScript }
+        return nil
+    }
+
+    /// Queue for blocking Process.waitUntilExit (avoid cooperative thread pool starvation)
+    private nonisolated static let scriptQueue = DispatchQueue(label: "com.claudepet.script", qos: .utility)
+
+    /// Run a shell script in the background, return trimmed stdout on success.
+    nonisolated static func runScript(
+        path: String,
+        env: [String: String],
+        timeout: TimeInterval = 10
+    ) async -> String? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/bash")
+        process.arguments = [path]
+
+        var fullEnv = ProcessInfo.processInfo.environment
+        for (k, v) in env { fullEnv[k] = v }
+        process.environment = fullEnv
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+
+        do { try process.run() } catch { return nil }
+
+        return await withCheckedContinuation { continuation in
+            scriptQueue.async {
+                let timeoutItem = DispatchWorkItem {
+                    if process.isRunning { process.terminate() }
+                }
+                DispatchQueue.global().asyncAfter(
+                    deadline: .now() + timeout, execute: timeoutItem
+                )
+
+                process.waitUntilExit()
+                timeoutItem.cancel()
+
+                guard process.terminationStatus == 0 else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                let text = String(data: data, encoding: .utf8)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                continuation.resume(returning: text)
+            }
+        }
+    }
+
+    // MARK: - Discovery
 
     /// Scan persona directory and load all valid personas
     static func discoverAll() -> [DataDrivenPersona] {

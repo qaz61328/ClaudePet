@@ -169,10 +169,12 @@ class PetServer {
             let personaID = DialogueBank.current.id
             let sessionCount = activeSessions.count
             let chatterOn = Self.isChatterEnabled
+            let ttsOn = TTSPlayer.isEnabled
             let termAuth = Self.isTerminalAuthMode
             sendJSON(conn, status: 200, body: HealthResponse(
                 version: PersonaDirectory.appVersion, persona: personaID,
-                activeSessions: sessionCount, chatterEnabled: chatterOn, terminalAuthMode: termAuth,
+                activeSessions: sessionCount, chatterEnabled: chatterOn, ttsEnabled: ttsOn,
+                terminalAuthMode: termAuth,
                 recentChatter: recentChatter,
                 recentWorkContexts: recentWorkContexts
             ))
@@ -454,8 +456,6 @@ class PetServer {
         chatterTimer = nil
     }
 
-    private nonisolated static let chatterScriptQueue = DispatchQueue(label: "com.claudepet.chatter-script", qos: .utility)
-
     private static let iso8601Formatter: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.timeZone = .current
@@ -486,15 +486,17 @@ class PetServer {
         let provider = Self.chatterProvider
 
         Task.detached { [weak self] in
-            let result = await Self.runChatterScript(
-                scriptPath: scriptPath,
-                promptPath: promptPath,
-                context: context,
-                personaID: personaID,
-                time: timeStr,
-                authToken: token,
-                recentChatter: recent,
-                provider: provider
+            var env: [String: String] = [
+                "CHATTER_PROMPT_PATH": promptPath ?? "",
+                "CHATTER_CONTEXT": context,
+                "CHATTER_PERSONA": personaID,
+                "CHATTER_TIME": timeStr,
+                "CLAUDEPET_TOKEN": token,
+                "CHATTER_RECENT": recent.joined(separator: "\n"),
+            ]
+            if !provider.isEmpty { env["CHATTER_PROVIDER"] = provider }
+            let result = await PersonaDirectory.runScript(
+                path: scriptPath, env: env, timeout: 10
             )
             await MainActor.run { [weak self] in
                 guard let self else {
@@ -514,20 +516,7 @@ class PetServer {
 
     /// Find the chatter generation script (persona dir > scripts/ dir)
     private func resolveChatterScript(personaID: String) -> String? {
-        let fm = FileManager.default
-
-        // 1. Persona-specific script
-        let personaScript = PersonaDirectory.baseURL
-            .appendingPathComponent(personaID)
-            .appendingPathComponent("generate-chatter.sh").path
-        if fm.isExecutableFile(atPath: personaScript) { return personaScript }
-
-        // 2. Global default script
-        let globalScript = PersonaDirectory.projectRoot
-            .appendingPathComponent("scripts/generate-chatter.sh").path
-        if fm.isExecutableFile(atPath: globalScript) { return globalScript }
-
-        return nil
+        PersonaDirectory.resolveScript(personaID: personaID, name: "generate-chatter.sh")
     }
 
     /// Find the chatter prompt file for the current persona
@@ -547,67 +536,6 @@ class PetServer {
         if fm.fileExists(atPath: defaultPrompt) { return defaultPrompt }
 
         return nil
-    }
-
-    /// Execute chatter script in a background process, return stdout text
-    private nonisolated static func runChatterScript(
-        scriptPath: String,
-        promptPath: String?,
-        context: String?,
-        personaID: String,
-        time: String,
-        authToken: String,
-        recentChatter: [String],
-        provider: String
-    ) async -> String? {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/bin/bash")
-        process.arguments = [scriptPath]
-
-        // Pass parameters via environment variables
-        var env = ProcessInfo.processInfo.environment
-        env["CHATTER_PROMPT_PATH"] = promptPath ?? ""
-        env["CHATTER_CONTEXT"] = context ?? ""
-        env["CHATTER_PERSONA"] = personaID
-        env["CHATTER_TIME"] = time
-        env["CLAUDEPET_TOKEN"] = authToken
-        env["CHATTER_RECENT"] = recentChatter.joined(separator: "\n")
-        if !provider.isEmpty {
-            env["CHATTER_PROVIDER"] = provider
-        }
-        process.environment = env
-
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = FileHandle.nullDevice
-
-        do {
-            try process.run()
-        } catch {
-            return nil
-        }
-
-        // Wait on a dedicated queue to avoid blocking the cooperative thread pool
-        return await withCheckedContinuation { continuation in
-            Self.chatterScriptQueue.async {
-                let deadline = DispatchTime.now() + 10.0
-                DispatchQueue.global().asyncAfter(deadline: deadline) {
-                    if process.isRunning { process.terminate() }
-                }
-
-                process.waitUntilExit()
-
-                guard process.terminationStatus == 0 else {
-                    continuation.resume(returning: nil)
-                    return
-                }
-
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                let text = String(data: data, encoding: .utf8)?
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                continuation.resume(returning: text)
-            }
-        }
     }
 
     // MARK: - Authorization Mode
@@ -688,6 +616,7 @@ private struct HealthResponse: Encodable {
     let persona: String
     let activeSessions: Int
     let chatterEnabled: Bool
+    let ttsEnabled: Bool
     let terminalAuthMode: Bool
     let recentChatter: [String]
     let recentWorkContexts: [String]

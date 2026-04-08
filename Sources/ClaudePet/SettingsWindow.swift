@@ -14,10 +14,16 @@ class SettingsWindow {
     private var chatterCheckbox: NSButton?
     private var authModeCheckbox: NSButton?
     private var providerPopup: NSPopUpButton?
+    private var ttsCheckbox: NSButton?
+    private var ttsProviderPopup: NSPopUpButton?
 
     private static let providerValues = ["", "anthropic", "bedrock", "claude-cli"]
     private static let providerTitles = [
         "Auto-detect", "Anthropic API", "AWS Bedrock", "Claude Code CLI"
+    ]
+    private static let ttsProviderValues = ["", "edge-tts", "say"]
+    private static let ttsProviderTitles = [
+        "Auto-detect", "Edge TTS", "macOS Say"
     ]
 
     // MARK: - Show / Hide
@@ -40,10 +46,15 @@ class SettingsWindow {
         muteCheckbox?.state = SoundPlayer.isMuted ? .on : .off
         chatterCheckbox?.state = PetServer.isChatterEnabled ? .on : .off
         authModeCheckbox?.state = PetServer.isTerminalAuthMode ? .on : .off
+        ttsCheckbox?.state = TTSPlayer.isEnabled ? .on : .off
 
         let current = PetServer.chatterProvider
         if let idx = Self.providerValues.firstIndex(of: current) {
             providerPopup?.selectItem(at: idx)
+        }
+        let currentTTS = TTSPlayer.provider
+        if let idx = Self.ttsProviderValues.firstIndex(of: currentTTS) {
+            ttsProviderPopup?.selectItem(at: idx)
         }
     }
 
@@ -51,7 +62,7 @@ class SettingsWindow {
 
     private func buildWindow() -> NSWindow {
         let winWidth: CGFloat = 460
-        let winHeight: CGFloat = 320
+        let winHeight: CGFloat = 420
 
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: winWidth, height: winHeight),
@@ -142,6 +153,32 @@ class SettingsWindow {
         popup.action = #selector(providerChanged(_:))
         view.addSubview(popup)
         providerPopup = popup
+        y -= 32
+
+        y = addSeparator(to: view, y: y, pad: pad, width: contentWidth)
+
+        // --- TTS (Text-to-Speech) ---
+        y = addSectionHeader(L("TTS (Text-to-Speech)"), to: view, y: y, pad: pad)
+
+        let tts = NSButton(checkboxWithTitle: L("Enable TTS for Chatter"), target: self, action: #selector(ttsToggled(_:)))
+        tts.frame = NSRect(x: pad + 4, y: y - 18, width: contentWidth, height: 18)
+        view.addSubview(tts)
+        ttsCheckbox = tts
+        y -= 26
+
+        let ttsLabel = NSTextField(labelWithString: L("Provider:"))
+        ttsLabel.font = .systemFont(ofSize: 13)
+        ttsLabel.frame = NSRect(x: pad + 4, y: y - 19, width: 70, height: 18)
+        view.addSubview(ttsLabel)
+
+        let ttsPopup = NSPopUpButton(frame: NSRect(x: pad + 76, y: y - 22, width: 200, height: 24), pullsDown: false)
+        for title in Self.ttsProviderTitles {
+            ttsPopup.addItem(withTitle: L(String.LocalizationValue(title)))
+        }
+        ttsPopup.target = self
+        ttsPopup.action = #selector(ttsProviderChanged(_:))
+        view.addSubview(ttsPopup)
+        ttsProviderPopup = ttsPopup
         y -= 32
 
         y = addSeparator(to: view, y: y, pad: pad, width: contentWidth)
@@ -237,6 +274,18 @@ class SettingsWindow {
         let idx = sender.indexOfSelectedItem
         guard idx >= 0, idx < Self.providerValues.count else { return }
         PetServer.chatterProvider = Self.providerValues[idx]
+    }
+
+    @objc private func ttsToggled(_ sender: NSButton) {
+        let on = (sender.state == .on)
+        TTSPlayer.isEnabled = on
+        onShowBubble?(L(on ? "TTS ON." : "TTS OFF."))
+    }
+
+    @objc private func ttsProviderChanged(_ sender: NSPopUpButton) {
+        let idx = sender.indexOfSelectedItem
+        guard idx >= 0, idx < Self.ttsProviderValues.count else { return }
+        TTSPlayer.provider = Self.ttsProviderValues[idx]
     }
 
     @objc private func restoreDefaultShortcuts(_ sender: NSButton) {

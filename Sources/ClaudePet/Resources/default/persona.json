@@ -162,5 +162,9 @@
       "{project} strategy is set, ready for review",
       "{project} action plan ready, awaiting your go"
     ]
+  },
+  "tts": {
+    "edgeTTS": "en-GB-RyanNeural",
+    "say": "Daniel"
   }
 }

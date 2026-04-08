@@ -22,6 +22,24 @@ Use AskUserQuestion to gather the following details (aim for 2-3 questions):
 - Color scheme for the persona's appearance (used for sprite generation; defaults inferred from personality)
 - Accessories (replaces the default bowtie: cat ears, ribbon, scarf, hat, etc.)
 - Custom sound effects (whether the user will provide custom audio files; defaults used otherwise)
+- TTS voice preference (for idle chatter text-to-speech; see TTS voice selection below)
+
+### Step 1b: TTS Voice Selection (optional)
+
+If the user wants TTS for chatter, help them pick a voice:
+
+1. Determine the chatter language from the persona's speech style (if Chinese persona → zh-TW voices; if English → en-US voices, etc.)
+2. Suggest default voices based on language:
+   - zh-TW: `zh-TW-HsiaoChenNeural` (female) or `zh-TW-YunJheNeural` (male)
+   - en-US: `en-US-AriaNeural` (female) or `en-US-GuyNeural` (male)
+   - en-GB: `en-GB-SoniaNeural` (female) or `en-GB-RyanNeural` (male)
+   - ja-JP: `ja-JP-NanamiNeural` (female) or `ja-JP-KeitaNeural` (male)
+3. Tell the user they can browse and preview voices:
+   - Edge TTS: `edge-tts --list-voices` to browse, `edge-tts --text "test" --voice "voice-name" --write-media /tmp/test.mp3 && afplay /tmp/test.mp3` to preview
+   - macOS say: `say -v '?'` to browse, `say -v "VoiceName" "test"` to preview
+4. If the user skips this step, omit the `tts` field in persona.json (script will use fallback defaults)
+
+**Important:** The voice language must match the chatter prompt language. A Japanese voice reading Chinese text produces garbled output.
 
 ### Step 2: Generate persona.json
 
@@ -37,6 +55,7 @@ Based on the collected persona information, generate a complete `persona.json`.
 - lateNight lines should convey concern for the user's health
 - fileToolLabels actionLabel text should match the persona's voice
 - buttonLabels (approve/approveSession/deny) should be short, decisive, and match the persona's voice. Include ✓/✗ prefix
+- If TTS voice was selected in Step 1b, include the `tts` object with `edgeTTS` and/or `say` fields
 
 Refer to [references/persona-schema.md] for complete field documentation.
 Refer to `Sources/ClaudePet/Resources/default/persona.json` in the project as a dialogue example.
@@ -103,6 +122,8 @@ Inform the user:
 - To add custom sound effects, place `startup.aif`, `notify.aif`, `authorize.aif` in `Personas/<id>/` (supports .aif/.wav/.mp3)
 - Personas without custom sound effects will automatically use the built-in defaults
 - To adjust idle chatter style, edit `chatter-prompt.md`
+- To change the TTS voice, edit the `tts` field in `persona.json`. Browse voices with `edge-tts --list-voices` or `say -v '?'`
+- Enable TTS in Settings > TTS to hear the persona speak during idle chatter
 
 ## Notes
 

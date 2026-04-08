@@ -40,6 +40,14 @@
 "Claude Code CLI" = "Claude Code CLI";
 "Authorization" = "Authorization";
 
+/* TTS */
+"TTS (Text-to-Speech)" = "TTS (Text-to-Speech)";
+"Enable TTS for Chatter" = "Enable TTS for Chatter";
+"Edge TTS" = "Edge TTS";
+"macOS Say" = "macOS Say";
+"TTS ON." = "TTS ON. Chatter will be spoken aloud.";
+"TTS OFF." = "TTS OFF.";
+
 /* Keyboard Shortcuts */
 "Keyboard Shortcuts" = "Keyboard Shortcuts";
 "Toggle Pet" = "Show/Hide Pet";

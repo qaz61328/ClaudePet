@@ -15,7 +15,8 @@ macOS native desktop pet application with multi-persona pixel-art characters. In
 
 ```
 Main.swift                PetWindow.swift           PetView.swift
-SpeechBubble.swift        SoundPlayer.swift         PetServer.swift
+SpeechBubble.swift        SoundPlayer.swift         TTSPlayer.swift
+PetServer.swift
 GlobalHotKeyManager.swift ShortcutRecorderView.swift DialogueBank.swift
 PersonaLoader.swift       TerminalActivator.swift   StatusBarMenu.swift
 Resources/
@@ -27,7 +28,7 @@ Resources/
 idle/working --(click)--> bow -> talking -> restingState*
              --(/notify type=ask)--> talking -> restingState* (AskUserQuestion notification)
              --(/notify type=plan)--> talking -> restingState* (Plan Mode plan ready)
-             --(/chatter)--> talking -> restingState* (idle chatter, no sound, 3.5s; discarded if auth/notify showing)
+             --(/chatter)--> talking -> restingState* (idle chatter, TTS if enabled, 3.5s; discarded if auth/notify showing)
              --(/authorize)--> alert + AuthBubble
                +--(allow / ⌃⌥Y)--> happy -> restingState*
                +--(deny / ⌃⌥N)--> restingState*
@@ -48,10 +49,10 @@ All POST endpoints require auth token (`X-ClaudePet-Token` header) and Host head
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/health` | Returns `{"status":"ok","version":"<ver>","persona":"<id>","activeSessions":<n>,"chatterEnabled":<bool>,"terminalAuthMode":<bool>}` |
+| GET | `/health` | Returns `{"status":"ok","version":"<ver>","persona":"<id>","activeSessions":<n>,"chatterEnabled":<bool>,"ttsEnabled":<bool>,"terminalAuthMode":<bool>}` |
 | POST | `/notify` | Notification. Returns 200 immediately. `type` field: `"ask"`, `"plan"` |
 | POST | `/authorize` | Authorization request. Holds connection until user clicks. 60-second timeout. |
-| POST | `/chatter` | Idle chatter (no sound). Body: `{"message":"..."}`. Silently discarded if auth/notify showing. |
+| POST | `/chatter` | Idle chatter (TTS if enabled). Body: `{"message":"..."}`. Silently discarded if auth/notify showing. |
 | POST | `/working` | Session work state. Body: `{"session":"<uuid>","active":true/false,"context":"<brief work description>"}`. 3-minute auto-expiry. |
 
 ### Security
@@ -92,6 +93,17 @@ Two auth modes switchable via status bar menu. Persisted in UserDefaults, synced
 - **External POST**: `/chatter` endpoint still available for external callers
 - **Priority**: `authorize > notify > working > chatter > idle` — chatter always yields
 - **Opt-in**: Disabled by default. Enable via status bar menu toggle (`UserDefaults` key: `chatterEnabled`)
+
+### TTS (Text-to-Speech)
+
+- **Scope**: Chatter bubbles only (notify/authorize/greeting do not trigger TTS)
+- **Architecture**: Pluggable shell script (`scripts/tts.sh`) generates audio file → Swift plays via NSSound
+- **Script env vars**: `TTS_TEXT`, `TTS_PERSONA`, `TTS_VOICE_EDGE`, `TTS_VOICE_SAY`, `TTS_PROVIDER`
+- **Script lookup**: `Personas/<id>/tts.sh` → `scripts/tts.sh`
+- **Providers**: Auto-detect (Edge TTS → macOS say). Provider-specific scripts in `scripts/tts-*.sh`
+- **Voice config**: Optional `tts` field in `persona.json` with `edgeTTS` and `say` voice names
+- **Cancellation**: New speak() call cancels previous playback + cleans up temp audio file
+- **Opt-in**: Disabled by default. Enable via Settings > TTS (`UserDefaults` key: `ttsEnabled`)
 
 ### Persona System
 
