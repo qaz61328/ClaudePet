@@ -26,8 +26,6 @@ func L(_ key: String.LocalizationValue) -> String {
 class StatusBarMenu: NSObject, NSMenuDelegate {
     private static let personaMenuTag = 100
     private static let muteItemTag = 101
-    private static let chatterItemTag = 102
-    private static let authModeItemTag = 103
 
     private var statusItem: NSStatusItem?
     private weak var petWindow: PetWindow?
@@ -74,23 +72,13 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
         muteItem.target = self
         muteItem.tag = Self.muteItemTag
 
-        let chatterItem = NSMenuItem(title: L("Idle Chatter"), action: #selector(toggleChatter), keyEquivalent: "")
-        chatterItem.target = self
-        chatterItem.tag = Self.chatterItemTag
-
         menu.addItem(showHideItem)
         menu.addItem(sayHelloItem)
         menu.addItem(muteItem)
-        let authModeItem = NSMenuItem(title: L("Authorize in Terminal"), action: #selector(toggleAuthMode), keyEquivalent: "")
-        authModeItem.target = self
-        authModeItem.tag = Self.authModeItemTag
 
-        menu.addItem(chatterItem)
-        menu.addItem(authModeItem)
-
-        let shortcutsItem = NSMenuItem(title: L("Keyboard Shortcuts..."), action: #selector(openShortcutPreferences), keyEquivalent: "")
-        shortcutsItem.target = self
-        menu.addItem(shortcutsItem)
+        let settingsItem = NSMenuItem(title: L("Settings..."), action: #selector(openSettings), keyEquivalent: ",")
+        settingsItem.target = self
+        menu.addItem(settingsItem)
         menu.addItem(.separator())
         let personaItem = NSMenuItem(title: L("Persona"), action: nil, keyEquivalent: "")
         personaItem.submenu = NSMenu()
@@ -118,15 +106,6 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
         if let muteItem = menu.item(withTag: Self.muteItemTag) {
             muteItem.state = SoundPlayer.isMuted ? .on : .off
         }
-        // Idle chatter toggle check state
-        if let chatterItem = menu.item(withTag: Self.chatterItemTag) {
-            chatterItem.state = PetServer.isChatterEnabled ? .on : .off
-        }
-        // Terminal auth mode toggle check state
-        if let authModeItem = menu.item(withTag: Self.authModeItemTag) {
-            authModeItem.state = PetServer.isTerminalAuthMode ? .on : .off
-        }
-
         guard let personaItem = menu.item(withTag: Self.personaMenuTag),
               let submenu = personaItem.submenu else { return }
         rebuildPersonaSubmenu(submenu)
@@ -177,91 +156,17 @@ class StatusBarMenu: NSObject, NSMenuDelegate {
         SoundPlayer.isMuted.toggle()
     }
 
-    @objc private func toggleChatter() {
-        PetServer.isChatterEnabled.toggle()
-        if PetServer.isChatterEnabled {
-            showBubble(L("Idle chatter ON."))
-        } else {
-            showBubble(L("Idle chatter OFF."))
+    // MARK: - Settings Window
+
+    private var settingsWindow: SettingsWindow?
+
+    @objc private func openSettings() {
+        if settingsWindow == nil {
+            let sw = SettingsWindow()
+            sw.onShowBubble = { [weak self] msg in self?.showBubble(msg) }
+            settingsWindow = sw
         }
-    }
-
-    @objc private func toggleAuthMode() {
-        PetServer.isTerminalAuthMode.toggle()
-        if PetServer.isTerminalAuthMode {
-            showBubble(L("Authorize in Terminal ON."))
-        } else {
-            showBubble(L("Authorize in Terminal OFF."))
-        }
-    }
-
-    // MARK: - Keyboard Shortcuts Preferences
-
-    private var shortcutWindow: NSWindow?
-
-    @objc private func openShortcutPreferences() {
-        if let existing = shortcutWindow {
-            existing.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-
-        let winWidth: CGFloat = 400
-        let rowHeight: CGFloat = 36
-        let actions = HotKeyAction.allCases
-        let contentHeight = CGFloat(actions.count) * rowHeight + 70 // rows + padding + button
-
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: winWidth, height: contentHeight),
-            styleMask: [.titled, .closable],
-            backing: .buffered,
-            defer: false
-        )
-        window.title = L("Keyboard Shortcuts")
-        window.center()
-        window.isReleasedWhenClosed = false
-
-        let contentView = NSView(frame: NSRect(x: 0, y: 0, width: winWidth, height: contentHeight))
-        window.contentView = contentView
-
-        let pad: CGFloat = 20
-        let labelWidth: CGFloat = 160
-        let recorderWidth: CGFloat = 140
-
-        for (i, action) in actions.enumerated() {
-            let y = contentHeight - CGFloat(i + 1) * rowHeight - 10
-
-            let label = NSTextField(labelWithString: action.localizedName)
-            label.font = .systemFont(ofSize: 13)
-            label.frame = NSRect(x: pad, y: y, width: labelWidth, height: 22)
-            contentView.addSubview(label)
-
-            let combo = GlobalHotKeyManager.shared?.comboForAction(action)
-            let recorder = ShortcutRecorderView(combo: combo, action: action)
-            recorder.frame = NSRect(x: pad + labelWidth + 10, y: y, width: recorderWidth, height: 24)
-            recorder.onRecorded = { newCombo in
-                GlobalHotKeyManager.shared?.updateBinding(for: action, combo: newCombo)
-            }
-            contentView.addSubview(recorder)
-        }
-
-        let buttonY: CGFloat = 14
-        let restoreButton = NSButton(title: L("Restore Defaults"), target: self, action: #selector(restoreDefaultShortcuts(_:)))
-        restoreButton.bezelStyle = .rounded
-        restoreButton.frame = NSRect(x: (winWidth - 140) / 2, y: buttonY, width: 140, height: 28)
-        contentView.addSubview(restoreButton)
-
-        self.shortcutWindow = window
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-    }
-
-    @objc private func restoreDefaultShortcuts(_ sender: NSButton) {
-        GlobalHotKeyManager.shared?.restoreDefaults()
-        // Close and reopen to refresh recorder views
-        shortcutWindow?.close()
-        shortcutWindow = nil
-        openShortcutPreferences()
+        settingsWindow?.show()
     }
 
     private var isUpgrading = false

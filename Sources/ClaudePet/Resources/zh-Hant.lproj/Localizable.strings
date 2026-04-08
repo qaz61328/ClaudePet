@@ -27,8 +27,20 @@
 "Authorize in Terminal ON." = "終端機授權模式已開啟，授權由終端機處理";
 "Authorize in Terminal OFF." = "終端機授權模式已關閉，授權由小幫手通知";
 
+/* Settings window */
+"Settings..." = "偏好設定⋯";
+"Settings" = "偏好設定";
+"General" = "一般";
+"Sound" = "聲音";
+"Enable Idle Chatter" = "啟用閒聊功能";
+"Provider:" = "產生方式：";
+"Auto-detect" = "自動偵測";
+"Anthropic API" = "Anthropic API";
+"AWS Bedrock" = "AWS Bedrock";
+"Claude Code CLI" = "Claude Code CLI";
+"Authorization" = "授權";
+
 /* Keyboard Shortcuts */
-"Keyboard Shortcuts..." = "快捷鍵設定⋯";
 "Keyboard Shortcuts" = "快捷鍵設定";
 "Toggle Pet" = "顯示／隱藏小幫手";
 "Allow (Auth)" = "允許";

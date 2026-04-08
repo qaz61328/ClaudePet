@@ -27,8 +27,20 @@
 "Authorize in Terminal ON." = "Terminal auth ON. Permissions handled in terminal.";
 "Authorize in Terminal OFF." = "Terminal auth OFF. Permissions handled by ClaudePet.";
 
+/* Settings window */
+"Settings..." = "Settings...";
+"Settings" = "Settings";
+"General" = "General";
+"Sound" = "Sound";
+"Enable Idle Chatter" = "Enable Idle Chatter";
+"Provider:" = "Provider:";
+"Auto-detect" = "Auto-detect";
+"Anthropic API" = "Anthropic API";
+"AWS Bedrock" = "AWS Bedrock";
+"Claude Code CLI" = "Claude Code CLI";
+"Authorization" = "Authorization";
+
 /* Keyboard Shortcuts */
-"Keyboard Shortcuts..." = "Keyboard Shortcuts...";
 "Keyboard Shortcuts" = "Keyboard Shortcuts";
 "Toggle Pet" = "Show/Hide Pet";
 "Allow (Auth)" = "Allow";
