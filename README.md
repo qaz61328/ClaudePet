@@ -7,7 +7,7 @@ Your desktop buddy for Claude Code. Intercepts permissions, pops notifications, 
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.3.7-blue" />
+  <img src="https://img.shields.io/badge/version-1.0.8-blue" />
   <img src="https://img.shields.io/badge/macOS-13%2B-black?logo=apple" />
   <img src="https://img.shields.io/badge/Swift-5.9%2B-F05138?logo=swift&logoColor=white" />
 </p>
