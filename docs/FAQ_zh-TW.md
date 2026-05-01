@@ -39,6 +39,10 @@ ClaudePet 偵測到所有 Claude Code session 結束後，等一段時間（約 
 3. 閒聊只在所有 Claude Code session 結束後等約 5 分鐘才觸發
 4. 確認 `scripts/generate-chatter.sh` 有執行權限（`chmod +x scripts/generate-chatter.sh`）
 
+### 哪裡可以試聽 TTS 語音？
+
+到 <https://tts.travisvn.com/> 可以瀏覽和試聽所有 Edge TTS 語音，選好後再填到 `persona.json` 的 `tts.edgeTTS` 欄位。
+
 ## 角色與自訂
 
 ### 建立的角色不符合想要的樣子

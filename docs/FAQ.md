@@ -39,6 +39,10 @@ This happens entirely within the ClaudePet process — no Claude Code subagents,
 3. Chatter only fires after all Claude Code sessions end and a ~5-minute delay passes
 4. Check that `scripts/generate-chatter.sh` is executable (`chmod +x scripts/generate-chatter.sh`)
 
+### Where can I preview TTS voices?
+
+Visit <https://tts.travisvn.com/> to browse and audition available Edge TTS voices before configuring the `tts.edgeTTS` field in your `persona.json`.
+
 ## Characters and Customization
 
 ### The generated persona doesn't match what I wanted
