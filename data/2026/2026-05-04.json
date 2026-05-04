@@ -1,0 +1,229 @@
+{
+  "date": "2026-05-04",
+  "clones": {
+    "count": 168,
+    "uniques": 76,
+    "clones": [
+      {
+        "timestamp": "2026-04-19T00:00:00Z",
+        "count": 1,
+        "uniques": 1
+      },
+      {
+        "timestamp": "2026-04-20T00:00:00Z",
+        "count": 17,
+        "uniques": 10
+      },
+      {
+        "timestamp": "2026-04-21T00:00:00Z",
+        "count": 1,
+        "uniques": 1
+      },
+      {
+        "timestamp": "2026-04-22T00:00:00Z",
+        "count": 4,
+        "uniques": 1
+      },
+      {
+        "timestamp": "2026-04-23T00:00:00Z",
+        "count": 22,
+        "uniques": 6
+      },
+      {
+        "timestamp": "2026-04-24T00:00:00Z",
+        "count": 4,
+        "uniques": 1
+      },
+      {
+        "timestamp": "2026-04-25T00:00:00Z",
+        "count": 23,
+        "uniques": 17
+      },
+      {
+        "timestamp": "2026-04-26T00:00:00Z",
+        "count": 0,
+        "uniques": 0
+      },
+      {
+        "timestamp": "2026-04-27T00:00:00Z",
+        "count": 11,
+        "uniques": 7
+      },
+      {
+        "timestamp": "2026-04-28T00:00:00Z",
+        "count": 29,
+        "uniques": 12
+      },
+      {
+        "timestamp": "2026-04-29T00:00:00Z",
+        "count": 9,
+        "uniques": 3
+      },
+      {
+        "timestamp": "2026-04-30T00:00:00Z",
+        "count": 1,
+        "uniques": 1
+      },
+      {
+        "timestamp": "2026-05-01T00:00:00Z",
+        "count": 44,
+        "uniques": 16
+      },
+      {
+        "timestamp": "2026-05-02T00:00:00Z",
+        "count": 2,
+        "uniques": 2
+      }
+    ]
+  },
+  "views": {
+    "count": 58,
+    "uniques": 8,
+    "views": [
+      {
+        "timestamp": "2026-04-19T00:00:00Z",
+        "count": 0,
+        "uniques": 0
+      },
+      {
+        "timestamp": "2026-04-20T00:00:00Z",
+        "count": 3,
+        "uniques": 1
+      },
+      {
+        "timestamp": "2026-04-21T00:00:00Z",
+        "count": 6,
+        "uniques": 1
+      },
+      {
+        "timestamp": "2026-04-22T00:00:00Z",
+        "count": 5,
+        "uniques": 2
+      },
+      {
+        "timestamp": "2026-04-23T00:00:00Z",
+        "count": 10,
+        "uniques": 5
+      },
+      {
+        "timestamp": "2026-04-24T00:00:00Z",
+        "count": 3,
+        "uniques": 1
+      },
+      {
+        "timestamp": "2026-04-25T00:00:00Z",
+        "count": 0,
+        "uniques": 0
+      },
+      {
+        "timestamp": "2026-04-26T00:00:00Z",
+        "count": 0,
+        "uniques": 0
+      },
+      {
+        "timestamp": "2026-04-27T00:00:00Z",
+        "count": 11,
+        "uniques": 1
+      },
+      {
+        "timestamp": "2026-04-28T00:00:00Z",
+        "count": 9,
+        "uniques": 2
+      },
+      {
+        "timestamp": "2026-04-29T00:00:00Z",
+        "count": 10,
+        "uniques": 1
+      },
+      {
+        "timestamp": "2026-04-30T00:00:00Z",
+        "count": 0,
+        "uniques": 0
+      },
+      {
+        "timestamp": "2026-05-01T00:00:00Z",
+        "count": 1,
+        "uniques": 1
+      },
+      {
+        "timestamp": "2026-05-02T00:00:00Z",
+        "count": 0,
+        "uniques": 0
+      }
+    ]
+  },
+  "referrers": [
+    {
+      "referrer": "github.com",
+      "count": 3,
+      "uniques": 1
+    },
+    {
+      "referrer": "Google",
+      "count": 1,
+      "uniques": 1
+    }
+  ],
+  "paths": [
+    {
+      "path": "/qaz61328/ClaudePet/graphs/traffic",
+      "title": "/graphs/traffic",
+      "count": 22,
+      "uniques": 1
+    },
+    {
+      "path": "/qaz61328/ClaudePet",
+      "title": "Overview",
+      "count": 14,
+      "uniques": 6
+    },
+    {
+      "path": "/qaz61328/ClaudePet/pulse",
+      "title": "/pulse",
+      "count": 7,
+      "uniques": 1
+    },
+    {
+      "path": "/qaz61328/ClaudePet/releases/tag/v0.3.7",
+      "title": "/releases/tag/v0.3.7",
+      "count": 2,
+      "uniques": 2
+    },
+    {
+      "path": "/qaz61328/ClaudePet/actions",
+      "title": "/actions",
+      "count": 2,
+      "uniques": 1
+    },
+    {
+      "path": "/qaz61328/ClaudePet/releases",
+      "title": "/releases",
+      "count": 2,
+      "uniques": 1
+    },
+    {
+      "path": "/qaz61328/ClaudePet/tree/traffic-data",
+      "title": "/tree/traffic-data",
+      "count": 2,
+      "uniques": 1
+    },
+    {
+      "path": "/qaz61328/ClaudePet/blob/main/docs/SETUP.md",
+      "title": "/blob/main/docs/SETUP.md",
+      "count": 1,
+      "uniques": 1
+    },
+    {
+      "path": "/qaz61328/ClaudePet/branches/stale",
+      "title": "/branches/stale",
+      "count": 1,
+      "uniques": 1
+    },
+    {
+      "path": "/qaz61328/ClaudePet/compare/v0.3.7...v1.0.8",
+      "title": "/compare/v0.3.7...v1.0.8",
+      "count": 1,
+      "uniques": 1
+    }
+  ]
+}
