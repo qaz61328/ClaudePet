@@ -1,23 +1,23 @@
 # ClaudePet Traffic Summary
 
-Data range: 2026-03-19 ~ 2026-05-09
+Data range: 2026-03-19 ~ 2026-05-16
 
 ## Clones
 
-- Total: 549
-- Unique cloners: 287
+- Total: 569
+- Unique cloners: 300
 
 ## Views
 
-- Total: 381
-- Unique visitors: 62
+- Total: 383
+- Unique visitors: 64
 
 ## Top Referrers
 
 | Site | Views | Unique |
 |------|-------|--------|
-| github.com | 300 | 34 |
-| Google | 6 | 6 |
+| github.com | 307 | 36 |
+| Google | 8 | 8 |
 | lm.facebook.com | 4 | 4 |
 | l.facebook.com | 2 | 2 |
 
@@ -77,3 +77,10 @@ Data range: 2026-03-19 ~ 2026-05-09
 | 2026-05-07 | 4 | 3 |
 | 2026-05-08 | 1 | 1 |
 | 2026-05-09 | 0 | 0 |
+| 2026-05-10 | 0 | 0 |
+| 2026-05-11 | 15 | 8 |
+| 2026-05-12 | 2 | 2 |
+| 2026-05-13 | 0 | 0 |
+| 2026-05-14 | 0 | 0 |
+| 2026-05-15 | 3 | 3 |
+| 2026-05-16 | 0 | 0 |
